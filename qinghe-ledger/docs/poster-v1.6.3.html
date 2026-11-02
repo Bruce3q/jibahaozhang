@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>辣脚记账 1.6.3 更新指南</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    width: 750px;
+    background: #F4F7F2;
+    color: #22332A;
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { padding: 46px 46px 40px; }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .logo {
+    width: 84px; height: 84px; border-radius: 24px; flex: none;
+    background: linear-gradient(140deg, #6CBF88, #3E8A5A);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px; box-shadow: 0 8px 20px rgba(62,138,90,.25);
+  }
+  .brand-name { font-size: 34px; font-weight: 800; letter-spacing: .5px; }
+  .brand-sub { font-size: 20px; color: #6B7F72; margin-top: 6px; }
+  .badge {
+    margin-left: auto; flex: none; background: #E4F1E6; color: #3E8A5A;
+    border: 1px solid #CBE3CF; border-radius: 999px;
+    padding: 9px 18px; font-size: 20px; font-weight: 700;
+  }
+  .hero {
+    margin-top: 34px; background: #2F5E43; color: #fff; border-radius: 28px;
+    padding: 34px 36px; position: relative; overflow: hidden;
+  }
+  .hero:after {
+    content: ""; position: absolute; right: -60px; bottom: -80px;
+    width: 240px; height: 240px; border-radius: 50%;
+    background: rgba(255,255,255,.07);
+  }
+  .hero h1 { margin: 0; font-size: 38px; line-height: 1.35; font-weight: 800; }
+  .hero p { margin: 14px 0 0; font-size: 22px; line-height: 1.6; color: #D7E8DC; }
+  .meta { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+  .meta span {
+    background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.18);
+    color: #EAF5ED; font-size: 18px; padding: 7px 14px; border-radius: 999px;
+  }
+  .shots { display: flex; gap: 14px; margin-top: 26px; }
+  .shots figure { margin: 0; flex: 1; }
+  .shots img {
+    width: 100%; display: block; border-radius: 20px;
+    border: 1px solid #DFE8DD; background: #fff;
+    box-shadow: 0 10px 24px rgba(34,51,42,.08);
+  }
+  .shots figcaption {
+    margin-top: 10px; text-align: center; font-size: 18px; color: #6B7F72;
+  }
+  h2 {
+    font-size: 32px; margin: 52px 0 8px; letter-spacing: .5px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2:before {
+    content: ""; width: 8px; height: 30px; border-radius: 4px; background: #4F9D69;
+  }
+  .lead { font-size: 20px; color: #6B7F72; margin: 0 0 20px 20px; line-height: 1.6; }
+  .cards { display: flex; flex-direction: column; gap: 14px; }
+  .card {
+    background: #fff; border: 1px solid #E2EAE0; border-radius: 20px;
+    padding: 20px 22px; display: flex; gap: 18px; align-items: flex-start;
+  }
+  .num {
+    flex: none; width: 44px; height: 44px; border-radius: 14px;
+    background: #E9F4EB; color: #3E8A5A; font-size: 21px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 25px; font-weight: 700; }
+  .card p { margin: 0; font-size: 20px; line-height: 1.62; color: #5C6F63; }
+  .card b { color: #2F5E43; }
+  .new {
+    display: inline-block; background: #FFEFD9; color: #B26B1F; font-size: 16px;
+    font-weight: 700; border-radius: 8px; padding: 3px 8px; margin-left: 8px;
+    vertical-align: 3px;
+  }
+  .steps { display: flex; gap: 14px; margin-top: 8px; }
+  .step {
+    flex: 1; background: #fff; border: 1px solid #E2EAE0; border-radius: 20px;
+    padding: 22px 20px; position: relative;
+  }
+  .step .k {
+    width: 40px; height: 40px; border-radius: 50%; background: #2F5E43; color: #fff;
+    font-size: 20px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+  }
+  .step h3 { margin: 0 0 8px; font-size: 23px; }
+  .step p { margin: 0; font-size: 19px; line-height: 1.6; color: #5C6F63; }
+  .perm {
+    margin-top: 16px; background: #FFF8EA; border: 1px solid #F1DFC0; border-radius: 18px;
+    padding: 18px 22px; font-size: 19px; line-height: 1.75; color: #7A5A22;
+  }
+  .perm b { color: #5C3E0E; }
+  .faq { display: flex; flex-direction: column; gap: 12px; }
+  .qa { background: #fff; border: 1px solid #E2EAE0; border-radius: 18px; padding: 18px 22px; }
+  .qa h4 { margin: 0 0 8px; font-size: 21px; color: #2F5E43; }
+  .qa p { margin: 0; font-size: 19px; line-height: 1.65; color: #5C6F63; }
+  .timeline { display: flex; flex-direction: column; gap: 0; margin-top: 10px; }
+  .tl { display: flex; gap: 16px; }
+  .tl .v {
+    flex: none; width: 96px; text-align: right; font-size: 19px; font-weight: 700; color: #3E8A5A;
+    padding-top: 4px;
+  }
+  .tl .dotcol { flex: none; width: 14px; display: flex; flex-direction: column; align-items: center; }
+  .tl .dot { width: 12px; height: 12px; border-radius: 50%; background: #CBE3CF; margin-top: 8px; }
+  .tl.cur .dot { background: #4F9D69; box-shadow: 0 0 0 5px #E4F1E6; }
+  .tl .line { width: 2px; flex: 1; background: #E2EAE0; }
+  .tl .body { padding: 0 0 20px 4px; font-size: 19px; line-height: 1.6; color: #5C6F63; }
+  .tl .body b { color: #22332A; }
+  .note {
+    margin-top: 26px; background: #fff; border-radius: 18px; padding: 20px 22px;
+    font-size: 19px; line-height: 1.7; color: #5C6F63; border: 1px dashed #CBE3CF;
+  }
+  .foot {
+    margin-top: 34px; border-top: 1px solid #E2EAE0; padding-top: 22px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 18px; color: #8A9B90;
+  }
+  .foot b { color: #3E8A5A; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <div class="logo">🦶</div>
+    <div>
+      <div class="brand-name">辣脚记账</div>
+      <div class="brand-sub">从 1.1.0 到 1.6.3 · 更新指南</div>
+    </div>
+    <div class="badge">v1.6.3</div>
+  </div>
+
+  <div class="hero">
+    <h1>还是打开就能记，<br>但快了很多，也清楚了很多。</h1>
+    <p>不用账号、没有广告、数据只存在你手机里。<br>这次更新带来了 10 个实打实的变化。</p>
+    <div class="meta">
+      <span>157 KB</span>
+      <span>Android 8.0+</span>
+      <span>覆盖安装保留数据</span>
+      <span>纯本地</span>
+    </div>
+  </div>
+
+  <div class="shots">
+    <figure><img src="../shots/v163-calendar.png" alt="日历日总结"><figcaption>日历 · 当天总结</figcaption></figure>
+    <figure><img src="../shots/v163-picker.png" alt="分类"><figcaption>12 个分类</figcaption></figure>
+    <figure><img src="../shots/v163-cum.png" alt="累计结余"><figcaption>累计结余 · 按月看</figcaption></figure>
+  </div>
+
+  <h2>最值得用的 10 个变化</h2>
+  <p class="lead">按使用频率排序，每条都能在 1 分钟内学会。</p>
+
+  <div class="cards">
+    <div class="card"><div class="num">01</div><div>
+      <h3>支付页三个快捷入口</h3>
+      <p>悬浮球、通知栏「记一笔」、状态栏磁贴——在付款成功页点一下就能记，不用切回 App。<b>悬浮球可拖动吸边，不用时自动收起。</b></p>
+    </div></div>
+
+    <div class="card"><div class="num">02</div><div>
+      <h3>三餐可记「这餐没吃」</h3>
+      <p>勾选后按 0 元保存，账单显示「未用餐」，<b>不增加支出</b>，但三餐记录是完整的。</p>
+    </div></div>
+
+    <div class="card"><div class="num">03</div><div>
+      <h3>分类从 9 个变 12 个</h3>
+      <p>新增 <b>洗澡、饮水、洗衣</b>，颜色图标与原来一致；统计、预算、账单自动识别，旧账单不用处理。</p>
+    </div></div>
+
+    <div class="card"><div class="num">04</div><div>
+      <h3>累计结余<span class="new">1.6.3 增强</span></h3>
+      <p>单月结余 = 当月预算 − 实际支出，再逐月累加。现在可以<b>点 ‹ › 或点柱状图切换月份</b>，查看任意一月。</p>
+    </div></div>
+
+    <div class="card"><div class="num">05</div><div>
+      <h3>预算校准</h3>
+      <p>当月账单和实际花费对不上时，可手动填一个更真实的「已消费」；<b>只影响预算显示，不改账单</b>，可随时恢复自动。</p>
+    </div></div>
+
+    <div class="card"><div class="num">06</div><div>
+      <h3>备注搜索<span class="new">1.6.3 增强</span></h3>
+      <p>输入「奶茶」「房租」就能查；<b>新增起止日期</b>，选好时段只统计这段时间的花费，不选就是全局搜索。</p>
+    </div></div>
+
+    <div class="card"><div class="num">07</div><div>
+      <h3>导入微信 / 支付宝账单</h3>
+      <p>支持 CSV、XLSX，本机解析不上传；导入前可逐条勾选、改分类，<b>重复交易自动跳过</b>。</p>
+    </div></div>
+
+    <div class="card"><div class="num">08</div><div>
+      <h3>日历备注</h3>
+      <p>给某一天写一句话，如「发工资」「聚餐」「出差」，翻月、备份、恢复都不会丢。</p>
+    </div></div>
+
+    <div class="card"><div class="num">09</div><div>
+      <h3>自定义周期账单</h3>
+      <p>任选起止日期，查看这段时间的总收支、笔数和分类明细，还能直接导出 CSV。</p>
+    </div></div>
+
+    <div class="card"><div class="num">10</div><div>
+      <h3>周期提醒 + 系统通知</h3>
+      <p>提醒支持<b>每天 / 每周 / 每月 / 每年</b>，Android 版本用系统通知，锁屏也能收到。</p>
+    </div></div>
+  </div>
+
+  <h2>升级只要 3 步</h2>
+  <p class="lead">覆盖安装即可，账单、预算、设置全部保留。</p>
+  <div class="steps">
+    <div class="step"><div class="k">1</div><h3>先备份</h3><p>我的 → 数据备份 → 导出 JSON，发到文件传输助手存一份。</p></div>
+    <div class="step"><div class="k">2</div><h3>覆盖安装</h3><p>打开新 APK，允许「未知来源」安装；<b>不要先卸载</b>。</p></div>
+    <div class="step"><div class="k">3</div><h3>检查权限</h3><p>需要悬浮球就允许「显示在其他应用上层」，需要提醒就允许通知。</p></div>
+  </div>
+  <div class="perm">
+    <b>只申请 3 个可选权限</b>：悬浮窗（悬浮球）、通知（提醒）、忽略电池优化（后台稳定）。<br>
+    <b>不申请</b>：无障碍、读屏、相册、通讯录、定位 —— 不读聊天、不截屏、不联网上传。<br>
+    小米 / Redmi：设置里给辣脚记账开「自启动」和「电池无限制」，悬浮球与提醒会更稳。
+  </div>
+
+  <h2>大家最常问的 4 个问题</h2>
+  <div class="faq">
+    <div class="qa"><h4>Q1 升级后账单会丢吗？</h4><p>不会。覆盖安装保留本地数据；仍建议先导出一次 JSON 备份，多一层保险。</p></div>
+    <div class="qa"><h4>Q2 以前的「自动识别支付」怎么没了？</h4><p>试过读屏、截图识别、通知监听三种方案，在小米等机型上常被系统关闭、权限又重。1.6 起改为三个更可靠的手动入口 + 账单导入，不读屏不截屏，更省电也更安心。</p></div>
+    <div class="qa"><h4>Q3 悬浮球不显示 / 磁贴找不到？</h4><p>悬浮球：我的 → 快速记账 → 悬浮球，开启并允许「显示在其他应用上层」。磁贴：下拉控制中心 → 编辑 → 把「辣脚记账 · 记一笔」拖进面板。</p></div>
+    <div class="qa"><h4>Q4 换手机怎么迁移？</h4><p>旧手机导出 JSON 备份，新手机安装后用「数据恢复」选择该文件即可，账单、预算、备注一起过去。</p></div>
+  </div>
+
+  <h2>从 1.1.0 走到 1.6.3</h2>
+  <div class="timeline">
+    <div class="tl"><div class="v">1.1.0</div><div class="dotcol"><div class="dot"></div><div class="line"></div></div><div class="body"><b>两键记账</b>：首页「记一笔 / 收入」，分类面板，日总结进日历，预算可自由分配。</div></div>
+    <div class="tl"><div class="v">1.2.0</div><div class="dotcol"><div class="dot"></div><div class="line"></div></div><div class="body"><b>更名辣脚记账</b>；0 元餐、洗澡/饮水、账单导入、预算校准、累计结余、周期提醒。</div></div>
+    <div class="tl"><div class="v">1.3–1.5</div><div class="dotcol"><div class="dot"></div><div class="line"></div></div><div class="body">尝试自动识别（截图 / 通知监听），因稳定性与权限问题已下线。</div></div>
+    <div class="tl"><div class="v">1.6.0</div><div class="dotcol"><div class="dot"></div><div class="line"></div></div><div class="body"><b>支付页三入口</b>：悬浮球小窗、通知栏「记一笔」、桌面小组件。</div></div>
+    <div class="tl"><div class="v">1.6.1</div><div class="dotcol"><div class="dot"></div><div class="line"></div></div><div class="body">悬浮球吸边收起、状态栏磁贴、日历备注、备注搜索、补记全分类。</div></div>
+    <div class="tl cur"><div class="v">1.6.3</div><div class="dotcol"><div class="dot"></div></div><div class="body"><b>按月看累计结余、备注搜索选时段、新增洗衣分类</b>。</div></div>
+  </div>
+
+  <div class="note">
+    还有一点没变：<b>没有账号、没有广告、没有会员</b>。所有账单只写在你手机的本地存储里，卸载或清除数据前记得先导出备份。
+  </div>
+
+  <div class="foot">
+    <span>辣脚记账 <b>v1.6.3</b> · 157 KB · Android 8.0+</span>
+    <span>2026-10-28</span>
+  </div>
+</div>
+</body>
+</html>
