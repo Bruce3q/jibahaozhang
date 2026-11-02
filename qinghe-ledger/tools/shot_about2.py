@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+import sys, time
+sys.path.insert(0, 'tools')
+from shoot import CDP, new_target
+tid = new_target('about:blank')
+c = CDP(tid)
+c.send('Page.enable'); c.send('Runtime.enable')
+c.send('Network.enable'); c.send('Network.setCacheDisabled', cacheDisabled=True)
+c.send('Emulation.setDeviceMetricsOverride', width=390, height=844, deviceScaleFactor=2, mobile=True, screenWidth=390, screenHeight=844)
+c.send('Page.navigate', url='http://127.0.0.1:5178/index.html?tab=me&v=166')
+time.sleep(1.5)
+c.eval("(async function(){try{if(navigator.serviceWorker){var rs=await navigator.serviceWorker.getRegistrations();for(var i=0;i<rs.length;i++){await rs[i].unregister();}}if(window.caches){var ks=await caches.keys();for(var j=0;j<ks.length;j++){await caches.delete(ks[j]);}}}catch(e){}return 1})()")
+time.sleep(0.4)
+c.send('Page.reload', ignoreCache=True)
+time.sleep(1.8)
+print('title:', c.eval('document.title').encode('unicode_escape').decode())
+print('about:', c.eval("(document.body.innerText.match(/记把好账 v[0-9.]+/)||[''])[0]").encode('unicode_escape').decode())
+print('old hit:', str(c.eval("document.body.innerText.indexOf('辣脚记账')")))
+c.eval("window.scrollTo(0, document.body.scrollHeight)")
+time.sleep(0.6)
+c.shot('shots/v164-about2.png')
+print('saved')

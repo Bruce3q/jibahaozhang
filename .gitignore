@@ -1,0 +1,11 @@
+# 构建中间产物（含签名的 keystore，绝不提交）
+qinghe-ledger/android-build/
+
+# 本机工具/会话缓存
+.workbuddy/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
