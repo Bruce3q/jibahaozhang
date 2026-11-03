@@ -38,6 +38,7 @@
     categoryManager: false,
     catIcon: 'dots',
     renaming: null,
+    timePicker: false,
     confirmTx: null,
     modalResolve: null,
     toastTimer: null
@@ -1388,7 +1389,7 @@
 
       '<section class="about-card">' +
       '<span class="about-logo">' + icon('leaf') + '</span>' +
-      '<p>记把好账 v1.6.11</p>' +
+      '<p>记把好账 v1.6.12</p>' +
       '<span>没有广告，没有社交，没有账号。所有数据仅保存在你的浏览器本地。</span>' +
       '<span class="storage-note">' + (Store.isStorageOK() ? icon('lock') + '本地存储正常' : icon('info') + '本地存储不可用，请勿清理浏览器数据') + '</span>' +
       (meta.lastBackupAt ? '<span class="storage-note">上次备份：' + esc(U.fullDateLabel(U.ymd(new Date(meta.lastBackupAt)))) + '</span>' : '') +
@@ -2049,7 +2050,8 @@
     renderSheet();
   }
 
-  function renderSheet() {
+  function renderSheet(opts) {
+    const autoFocus = !(opts && opts.focus === false);
     const sh = state.sheet;
     if (!sh) return;
     const isIncome = sh.type === 'income';
@@ -2090,9 +2092,9 @@
       '<input id="note-input" type="text" maxlength="30" placeholder="添加备注（可选）" value="' + esc(sh.note) + '" aria-label="备注">' +
       '</label>' +
       '<div class="sheet-date">' + icon('calendar') + '<span>' + (sh.date === U.today() ? '今天' : U.fullDateLabel(sh.date)) + '</span>' +
-      '<label class="sheet-time" title="修改记账时间">' + icon('clock') +
-      '<input id="time-input" type="time" step="60" value="' + esc(sh.time || U.hm(new Date())) + '" aria-label="记账时间">' +
-      '</label>' +
+      '<button type="button" class="sheet-time" data-action="open-time-picker" aria-label="修改记账日期和时间">' + icon('clock') +
+      '<span id="sheet-time-value">' + esc(sh.time || U.hm(new Date())) + '</span>' +
+      icon('chevron-down', 'tp-caret') + '</button>' +
       '</div>' +
       '<button class="btn-primary btn-block btn-save" data-action="save-tx">' + (editing ? '保存修改' : '保存') + '</button>' +
       '</div>';
@@ -2100,7 +2102,7 @@
     sheetRoot.classList.add('is-open');
     document.body.classList.add('sheet-open');
     const input = document.getElementById('amount-input');
-    if (input) {
+    if (input && autoFocus) {
       setTimeout(function () {
         try {
           input.focus({ preventScroll: true });
@@ -2111,8 +2113,131 @@
     }
   }
 
+  /* =========================================================
+   * 日期 / 时间选择器（双列滚轮）
+   * ======================================================= */
+
+  const TP_ITEM_H = 44;      // 每格高度，需与 CSS 中 .tp-item 一致
+  const TP_VISIBLE = 5;      // 可见行数，中间那行就是选中值
+
+  function tpPad(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  function tpDateLabel(ymd) {
+    const d = U.parseYmd(ymd);
+    if (!d) return ymd;
+    return d.getFullYear() + '年' + tpPad(d.getMonth() + 1) + '月' + tpPad(d.getDate()) + '日';
+  }
+
+  function tpColumn(id, count, selected, pad) {
+    let items = '';
+    for (let i = 0; i < count; i++) {
+      items += '<span class="tp-item' + (i === selected ? ' is-active' : '') + '" data-v="' + i + '">' + tpPad(i) + '</span>';
+    }
+    return '<div class="tp-col" id="' + id + '" data-sel="' + selected + '" style="padding-top:' + pad + 'px;padding-bottom:' + pad + 'px">' + items + '</div>';
+  }
+
+  function openTimePicker() {
+    const sh = state.sheet;
+    if (!sh) return;
+    if (sheetRoot.querySelector('.tp-layer')) return;
+    const cur = /^\d{2}:\d{2}$/.test(sh.time || '') ? sh.time : U.hm(new Date());
+    const hh = Number(cur.slice(0, 2));
+    const mm = Number(cur.slice(3, 5));
+    const pad = TP_ITEM_H * ((TP_VISIBLE - 1) / 2);
+
+    const layer = document.createElement('div');
+    layer.className = 'tp-layer';
+    layer.innerHTML =
+      '<div class="tp-backdrop" data-action="tp-cancel"></div>' +
+      '<div class="tp-card" role="dialog" aria-modal="true" aria-label="选择日期和时间">' +
+      '<h3 class="tp-title">选择日期和时间</h3>' +
+      '<button type="button" class="tp-date" data-action="tp-date">' +
+      '<span>日期</span><b id="tp-date-label">' + tpDateLabel(sh.date) + '</b>' + icon('chevron-right') +
+      '</button>' +
+      '<input id="tp-date-native" class="tp-native" type="date" value="' + esc(sh.date) + '" tabindex="-1" aria-hidden="true">' +
+      '<div class="tp-wheel">' +
+      '<div class="tp-band" aria-hidden="true"></div>' +
+      tpColumn('tp-hours', 24, hh, pad) +
+      tpColumn('tp-mins', 60, mm, pad) +
+      '</div>' +
+      '<div class="tp-actions">' +
+      '<button type="button" class="btn-ghost" data-action="tp-cancel">取消</button>' +
+      '<button type="button" class="btn-primary" data-action="tp-ok">确定</button>' +
+      '</div>' +
+      '</div>';
+    sheetRoot.appendChild(layer);
+
+    // 收起键盘，别挡住选择器
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+
+    const hours = layer.querySelector('#tp-hours');
+    const mins = layer.querySelector('#tp-mins');
+    hours.scrollTop = hh * TP_ITEM_H;
+    mins.scrollTop = mm * TP_ITEM_H;
+    [hours, mins].forEach(function (box) {
+      box.addEventListener('scroll', function () { tpSync(box); }, { passive: true });
+    });
+    // 等布局稳定后再定位一次，保证首屏就对准当前时间
+    requestAnimationFrame(function () {
+      hours.scrollTop = hh * TP_ITEM_H;
+      mins.scrollTop = mm * TP_ITEM_H;
+      tpSync(hours);
+      tpSync(mins);
+    });
+
+    const native = layer.querySelector('#tp-date-native');
+    native.addEventListener('change', function () {
+      if (!U.isYmd(native.value)) return;
+      layer.querySelector('#tp-date-label').textContent = tpDateLabel(native.value);
+    });
+
+    state.timePicker = true;
+  }
+
+  /** 滚动后按位置吸附，更新高亮与 data-sel */
+  function tpSync(box) {
+    const count = box.children.length;
+    const idx = Math.max(0, Math.min(count - 1, Math.round(box.scrollTop / TP_ITEM_H)));
+    if (String(box.dataset.sel) === String(idx)) return;
+    box.dataset.sel = idx;
+    for (let i = 0; i < count; i++) {
+      box.children[i].classList.toggle('is-active', i === idx);
+    }
+  }
+
+  function tpPickDate() {
+    const input = document.getElementById('tp-date-native');
+    if (!input) return;
+    try {
+      if (typeof input.showPicker === 'function') input.showPicker();
+      else input.click();
+    } catch (e) {
+      input.focus();
+    }
+  }
+
+  function closeTimePicker(commit) {
+    const layer = sheetRoot.querySelector('.tp-layer');
+    if (!layer) return;
+    state.timePicker = false;
+    if (commit && state.sheet) {
+      const h = Number(layer.querySelector('#tp-hours').dataset.sel || 0);
+      const m = Number(layer.querySelector('#tp-mins').dataset.sel || 0);
+      const native = layer.querySelector('#tp-date-native');
+      state.sheet.time = tpPad(h) + ':' + tpPad(m);
+      if (native && U.isYmd(native.value)) state.sheet.date = native.value;
+      layer.remove();
+      renderSheet({ focus: false });
+      return;
+    }
+    layer.remove();
+  }
+
   function closeSheet() {
     if (!sheetRoot.classList.contains('is-open')) return;
+    state.timePicker = false;
     sheetRoot.classList.remove('is-open');
     document.body.classList.remove('sheet-open');
     setTimeout(function () {
@@ -2148,10 +2273,8 @@
     if (!sh) return;
     const amountEl = document.getElementById('amount-input');
     const noteEl = document.getElementById('note-input');
-    const timeEl = document.getElementById('time-input');
-    const rawTime = timeEl ? String(timeEl.value || '') : '';
-    // 用户清空时间时回退到原值（编辑）或当前时刻（新增）
-    const time = /^\d{2}:\d{2}$/.test(rawTime) ? rawTime : (sh.time || U.hm(new Date()));
+    // 时间由选择器维护在 state 里，这里只做兜底校验
+    const time = /^\d{2}:\d{2}$/.test(sh.time || '') ? sh.time : U.hm(new Date());
     const amount = U.round2(U.toNumber(amountEl ? amountEl.value : sh.amount));
     const note = noteEl ? noteEl.value.trim().slice(0, 30) : sh.note;
     const type = sh.type;
@@ -2175,6 +2298,7 @@
           amount: amount,
           note: note,
           time: time,
+          date: sh.date,
           uneaten: amount === 0
         });
         toast(amount === 0 ? '已标记未用餐' : '已保存修改');
@@ -2633,6 +2757,18 @@
       case 'save-tx':
         saveSheet();
         break;
+      case 'open-time-picker':
+        openTimePicker();
+        break;
+      case 'tp-ok':
+        closeTimePicker(true);
+        break;
+      case 'tp-cancel':
+        closeTimePicker(false);
+        break;
+      case 'tp-date':
+        tpPickDate();
+        break;
       case 'nav-day':
         goDay(target.dataset.date);
         break;
@@ -2978,6 +3114,7 @@
     if (e.key === 'Escape') {
       if (state.tutorial) closeTutorial();
       else if (state.modalResolve) resolveModal(false);
+      else if (state.timePicker) closeTimePicker(false);
       else if (state.picker) closePicker();
       else if (state.sheet) closeSheet();
       else if (state.renaming) closeRename();
