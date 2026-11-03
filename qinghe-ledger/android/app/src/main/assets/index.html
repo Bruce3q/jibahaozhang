@@ -2729,6 +2729,49 @@ html[data-mode='dark'] .type-toggle button.is-active {
   font-style: normal;
 }
 
+/* 记账时间：点开系统时间选择器 */
+.sheet-date .sheet-time {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 11px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.sheet-date .sheet-time:active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.sheet-time .icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.75;
+}
+
+.sheet-time input {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  cursor: pointer;
+}
+
+/* 去掉原生外观（含重复的小时钟图标）：点整个胶囊即可唤起系统时间选择器 */
+.sheet-time input {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .btn-save {
   margin-top: 13px;
   height: 52px;
@@ -4964,6 +5007,10 @@ html[data-mode='dark'] .tutorial-art {
       <rect x="3" y="5" width="18" height="16" rx="3"/>
       <path d="M8 3v4M16 3v4M3 10h18"/>
       <path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"/>
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.5"/>
+      <path d="M12 7.3V12l3.2 2"/>
     </symbol>
     <symbol id="i-chart" viewBox="0 0 24 24">
       <path d="M3.5 20V9M9.5 20V4M15.5 20v-7M21 20H2.5"/>
@@ -8497,7 +8544,7 @@ html[data-mode='dark'] .tutorial-art {
 
       '<section class="about-card">' +
       '<span class="about-logo">' + icon('leaf') + '</span>' +
-      '<p>记把好账 v1.6.10</p>' +
+      '<p>记把好账 v1.6.11</p>' +
       '<span>没有广告，没有社交，没有账号。所有数据仅保存在你的浏览器本地。</span>' +
       '<span class="storage-note">' + (Store.isStorageOK() ? icon('lock') + '本地存储正常' : icon('info') + '本地存储不可用，请勿清理浏览器数据') + '</span>' +
       (meta.lastBackupAt ? '<span class="storage-note">上次备份：' + esc(U.fullDateLabel(U.ymd(new Date(meta.lastBackupAt)))) + '</span>' : '') +
@@ -9136,6 +9183,7 @@ html[data-mode='dark'] .tutorial-art {
       note: '',
       uneaten: false,
       date: U.isYmd(date) ? date : U.today(),
+      time: U.hm(new Date()),
       editId: null
     };
     renderSheet();
@@ -9197,7 +9245,11 @@ html[data-mode='dark'] .tutorial-art {
       '<label class="note-field">' + icon('pencil') +
       '<input id="note-input" type="text" maxlength="30" placeholder="添加备注（可选）" value="' + esc(sh.note) + '" aria-label="备注">' +
       '</label>' +
-      '<div class="sheet-date">' + icon('calendar') + '<span>' + (sh.date === U.today() ? '今天' : U.fullDateLabel(sh.date)) + '</span>' + (editing ? '<em>修改后立即生效</em>' : '') + '</div>' +
+      '<div class="sheet-date">' + icon('calendar') + '<span>' + (sh.date === U.today() ? '今天' : U.fullDateLabel(sh.date)) + '</span>' +
+      '<label class="sheet-time" title="修改记账时间">' + icon('clock') +
+      '<input id="time-input" type="time" step="60" value="' + esc(sh.time || U.hm(new Date())) + '" aria-label="记账时间">' +
+      '</label>' +
+      '</div>' +
       '<button class="btn-primary btn-block btn-save" data-action="save-tx">' + (editing ? '保存修改' : '保存') + '</button>' +
       '</div>';
 
@@ -9252,6 +9304,10 @@ html[data-mode='dark'] .tutorial-art {
     if (!sh) return;
     const amountEl = document.getElementById('amount-input');
     const noteEl = document.getElementById('note-input');
+    const timeEl = document.getElementById('time-input');
+    const rawTime = timeEl ? String(timeEl.value || '') : '';
+    // 用户清空时间时回退到原值（编辑）或当前时刻（新增）
+    const time = /^\d{2}:\d{2}$/.test(rawTime) ? rawTime : (sh.time || U.hm(new Date()));
     const amount = U.round2(U.toNumber(amountEl ? amountEl.value : sh.amount));
     const note = noteEl ? noteEl.value.trim().slice(0, 30) : sh.note;
     const type = sh.type;
@@ -9274,6 +9330,7 @@ html[data-mode='dark'] .tutorial-art {
           category: category,
           amount: amount,
           note: note,
+          time: time,
           uneaten: amount === 0
         });
         toast(amount === 0 ? '已标记未用餐' : '已保存修改');
@@ -9285,7 +9342,7 @@ html[data-mode='dark'] .tutorial-art {
           note: note,
           uneaten: amount === 0,
           date: sh.date,
-          time: U.hm(new Date())
+          time: time
         });
         const cat = type === 'income' ? INCOME : CAT_MAP[category] || CAT_MAP.other;
         toast(amount === 0 ? '已记录' + cat.name + ' · 未用餐' : '已记 ' + cat.name + ' ' + money(amount));

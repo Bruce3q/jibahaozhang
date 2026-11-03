@@ -2711,6 +2711,49 @@ html[data-mode='dark'] .type-toggle button.is-active {
   font-style: normal;
 }
 
+/* 记账时间：点开系统时间选择器 */
+.sheet-date .sheet-time {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 11px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.sheet-date .sheet-time:active {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.sheet-time .icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.75;
+}
+
+.sheet-time input {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  cursor: pointer;
+}
+
+/* 去掉原生外观（含重复的小时钟图标）：点整个胶囊即可唤起系统时间选择器 */
+.sheet-time input {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .btn-save {
   margin-top: 13px;
   height: 52px;

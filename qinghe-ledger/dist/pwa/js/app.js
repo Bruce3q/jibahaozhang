@@ -1388,7 +1388,7 @@
 
       '<section class="about-card">' +
       '<span class="about-logo">' + icon('leaf') + '</span>' +
-      '<p>记把好账 v1.6.10</p>' +
+      '<p>记把好账 v1.6.11</p>' +
       '<span>没有广告，没有社交，没有账号。所有数据仅保存在你的浏览器本地。</span>' +
       '<span class="storage-note">' + (Store.isStorageOK() ? icon('lock') + '本地存储正常' : icon('info') + '本地存储不可用，请勿清理浏览器数据') + '</span>' +
       (meta.lastBackupAt ? '<span class="storage-note">上次备份：' + esc(U.fullDateLabel(U.ymd(new Date(meta.lastBackupAt)))) + '</span>' : '') +
@@ -2027,6 +2027,7 @@
       note: '',
       uneaten: false,
       date: U.isYmd(date) ? date : U.today(),
+      time: U.hm(new Date()),
       editId: null
     };
     renderSheet();
@@ -2088,7 +2089,11 @@
       '<label class="note-field">' + icon('pencil') +
       '<input id="note-input" type="text" maxlength="30" placeholder="添加备注（可选）" value="' + esc(sh.note) + '" aria-label="备注">' +
       '</label>' +
-      '<div class="sheet-date">' + icon('calendar') + '<span>' + (sh.date === U.today() ? '今天' : U.fullDateLabel(sh.date)) + '</span>' + (editing ? '<em>修改后立即生效</em>' : '') + '</div>' +
+      '<div class="sheet-date">' + icon('calendar') + '<span>' + (sh.date === U.today() ? '今天' : U.fullDateLabel(sh.date)) + '</span>' +
+      '<label class="sheet-time" title="修改记账时间">' + icon('clock') +
+      '<input id="time-input" type="time" step="60" value="' + esc(sh.time || U.hm(new Date())) + '" aria-label="记账时间">' +
+      '</label>' +
+      '</div>' +
       '<button class="btn-primary btn-block btn-save" data-action="save-tx">' + (editing ? '保存修改' : '保存') + '</button>' +
       '</div>';
 
@@ -2143,6 +2148,10 @@
     if (!sh) return;
     const amountEl = document.getElementById('amount-input');
     const noteEl = document.getElementById('note-input');
+    const timeEl = document.getElementById('time-input');
+    const rawTime = timeEl ? String(timeEl.value || '') : '';
+    // 用户清空时间时回退到原值（编辑）或当前时刻（新增）
+    const time = /^\d{2}:\d{2}$/.test(rawTime) ? rawTime : (sh.time || U.hm(new Date()));
     const amount = U.round2(U.toNumber(amountEl ? amountEl.value : sh.amount));
     const note = noteEl ? noteEl.value.trim().slice(0, 30) : sh.note;
     const type = sh.type;
@@ -2165,6 +2174,7 @@
           category: category,
           amount: amount,
           note: note,
+          time: time,
           uneaten: amount === 0
         });
         toast(amount === 0 ? '已标记未用餐' : '已保存修改');
@@ -2176,7 +2186,7 @@
           note: note,
           uneaten: amount === 0,
           date: sh.date,
-          time: U.hm(new Date())
+          time: time
         });
         const cat = type === 'income' ? INCOME : CAT_MAP[category] || CAT_MAP.other;
         toast(amount === 0 ? '已记录' + cat.name + ' · 未用餐' : '已记 ' + cat.name + ' ' + money(amount));
