@@ -2729,116 +2729,34 @@ html[data-mode='dark'] .type-toggle button.is-active {
   font-style: normal;
 }
 
-/* 记账时间：点开日期时间选择器 */
-.sheet-date .sheet-time {
-  margin-left: auto;
+/* 记账时间：直接输入 HH:MM */
+.sheet-date-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 10px;
-  border-radius: 11px;
-  background: var(--card-2);
-  border: 1px solid var(--line);
-  color: var(--text-2);
-  font-size: 12.5px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
+  padding: 0;
+  font-size: 10.5px;
+  color: var(--text-3);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.sheet-date .sheet-time:active {
-  background: var(--primary-soft);
-  border-color: var(--primary);
-}
-
-.sheet-time .icon {
+.sheet-date-btn .icon {
   width: 13px;
   height: 13px;
-  opacity: 0.75;
 }
 
-.sheet-time #sheet-time-value {
-  color: var(--text);
-}
-
-.sheet-time .tp-caret {
+.sheet-date-btn .sheet-caret {
   width: 11px;
   height: 11px;
   opacity: 0.5;
 }
 
-/* ---------------- 日期 / 时间选择器 ---------------- */
-
-.tp-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 6;
-  display: flex;
-  align-items: flex-end;
+.sheet-date-btn:active {
+  color: var(--primary-strong);
 }
 
-.tp-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(10, 18, 12, 0.42);
-  backdrop-filter: blur(2px);
-}
-
-.tp-card {
-  position: relative;
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 16px 18px calc(14px + env(safe-area-inset-bottom));
-  border-radius: 28px 28px 0 0;
-  background: var(--sheet-bg);
-  box-shadow: 0 -18px 44px rgba(12, 26, 17, 0.24);
-  animation: tp-in 0.26s cubic-bezier(0.22, 0.9, 0.3, 1) both;
-}
-
-@keyframes tp-in {
-  from {
-    opacity: 0.5;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.tp-title {
-  margin: 2px 0 8px;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.tp-date {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px 2px;
-  font-size: 14px;
-  color: var(--text-2);
-}
-
-.tp-date b {
-  margin-left: auto;
-  font-weight: 600;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.tp-date .icon {
-  width: 15px;
-  height: 15px;
-  color: var(--text-3);
-}
-
-.tp-native {
+/* 系统日期选择器的载体：视觉隐藏但可唤起 */
+.sheet-date-native {
   position: fixed;
   left: 8px;
   bottom: 8px;
@@ -2849,84 +2767,43 @@ html[data-mode='dark'] .type-toggle button.is-active {
   pointer-events: none;
 }
 
-.tp-wheel {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  height: 220px;
-  margin-top: 2px;
-  overflow: hidden;
-}
-
-/* 中间高亮条：位置 = (可见行数-1)/2 × 行高 = 88px */
-.tp-band {
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 88px;
-  height: 44px;
-  border-radius: 14px;
-  background: var(--bg-deep);
-  box-shadow: inset 0 0 0 1px rgba(79, 157, 105, 0.14);
-  pointer-events: none;
-}
-
-html[data-mode='dark'] .tp-band {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
-
-.tp-col {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  max-width: 118px;
-  height: 220px;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  text-align: center;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-}
-
-.tp-col::-webkit-scrollbar {
-  display: none;
-}
-
-.tp-item {
-  display: flex;
+.sheet-date .sheet-time {
+  margin-left: auto;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  height: 44px;
-  scroll-snap-align: center;
-  font-size: 17px;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 11px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  cursor: text;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sheet-date .sheet-time:focus-within {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.sheet-time .icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.75;
+}
+
+.sheet-time input {
+  width: 48px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
-  color: var(--text-3);
-  transition: color 0.15s ease;
-}
-
-.tp-item.is-active {
-  color: var(--primary-strong);
-  font-weight: 700;
-}
-
-html[data-mode='dark'] .tp-item.is-active {
-  color: var(--primary);
-}
-
-.tp-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.tp-actions .btn-primary,
-.tp-actions .btn-ghost {
-  min-height: 46px;
+  text-align: center;
+  letter-spacing: 0.02em;
+  outline: none;
 }
 
 .btn-save {
@@ -7351,7 +7228,6 @@ html[data-mode='dark'] .tutorial-art {
     categoryManager: false,
     catIcon: 'dots',
     renaming: null,
-    timePicker: false,
     confirmTx: null,
     modalResolve: null,
     toastTimer: null
@@ -8702,7 +8578,7 @@ html[data-mode='dark'] .tutorial-art {
 
       '<section class="about-card">' +
       '<span class="about-logo">' + icon('leaf') + '</span>' +
-      '<p>记把好账 v1.6.12</p>' +
+      '<p>记把好账 v1.6.13</p>' +
       '<span>没有广告，没有社交，没有账号。所有数据仅保存在你的浏览器本地。</span>' +
       '<span class="storage-note">' + (Store.isStorageOK() ? icon('lock') + '本地存储正常' : icon('info') + '本地存储不可用，请勿清理浏览器数据') + '</span>' +
       (meta.lastBackupAt ? '<span class="storage-note">上次备份：' + esc(U.fullDateLabel(U.ymd(new Date(meta.lastBackupAt)))) + '</span>' : '') +
@@ -9381,7 +9257,7 @@ html[data-mode='dark'] .tutorial-art {
       '<div class="sheet-head">' +
       '<div class="sheet-cat">' +
       '<span class="sheet-cat-icon" style="--c:' + cat.color + ';--cs:' + hexA(cat.color, 0.14) + '">' + icon(cat.icon) + '</span>' +
-      '<div><strong>' + (editing ? '编辑账单' : esc(cat.name)) + '</strong><span>' + dateLabelForSheet(sh.date) + ' · ' + (isIncome ? '收入' : '支出') + '</span></div>' +
+      '<div><strong>' + (editing ? '编辑账单' : esc(cat.name)) + '</strong><span id="sheet-head-sub">' + dateLabelForSheet(sh.date) + ' · ' + (isIncome ? '收入' : '支出') + '</span></div>' +
       '</div>' +
       '<button class="icon-btn" data-action="close-sheet" aria-label="关闭">' + icon('close') + '</button>' +
       '</div>' +
@@ -9404,10 +9280,14 @@ html[data-mode='dark'] .tutorial-art {
       '<label class="note-field">' + icon('pencil') +
       '<input id="note-input" type="text" maxlength="30" placeholder="添加备注（可选）" value="' + esc(sh.note) + '" aria-label="备注">' +
       '</label>' +
-      '<div class="sheet-date">' + icon('calendar') + '<span>' + (sh.date === U.today() ? '今天' : U.fullDateLabel(sh.date)) + '</span>' +
-      '<button type="button" class="sheet-time" data-action="open-time-picker" aria-label="修改记账日期和时间">' + icon('clock') +
-      '<span id="sheet-time-value">' + esc(sh.time || U.hm(new Date())) + '</span>' +
-      icon('chevron-down', 'tp-caret') + '</button>' +
+      '<div class="sheet-date">' +
+      '<button type="button" class="sheet-date-btn" data-action="pick-date">' + icon('calendar') +
+      '<span id="sheet-date-value">' + (sh.date === U.today() ? '今天' : U.fullDateLabel(sh.date)) + '</span>' +
+      icon('chevron-down', 'sheet-caret') + '</button>' +
+      '<label class="sheet-time" title="直接输入时间，如 19:19">' + icon('clock') +
+      '<input id="time-input" type="text" inputmode="numeric" autocomplete="off" maxlength="5" value="' + esc(sh.time || U.hm(new Date())) + '" aria-label="记账时间">' +
+      '</label>' +
+      '<input id="date-input" class="sheet-date-native" type="date" value="' + esc(sh.date) + '" tabindex="-1" aria-hidden="true">' +
       '</div>' +
       '<button class="btn-primary btn-block btn-save" data-action="save-tx">' + (editing ? '保存修改' : '保存') + '</button>' +
       '</div>';
@@ -9426,102 +9306,45 @@ html[data-mode='dark'] .tutorial-art {
     }
   }
 
-  /* =========================================================
-   * 日期 / 时间选择器（双列滚轮）
-   * ======================================================= */
+  /* ---------------- 时间输入 ---------------- */
 
-  const TP_ITEM_H = 44;      // 每格高度，需与 CSS 中 .tp-item 一致
-  const TP_VISIBLE = 5;      // 可见行数，中间那行就是选中值
-
-  function tpPad(n) {
+  function sheetPad2(n) {
     return (n < 10 ? '0' : '') + n;
   }
 
-  function tpDateLabel(ymd) {
-    const d = U.parseYmd(ymd);
-    if (!d) return ymd;
-    return d.getFullYear() + '年' + tpPad(d.getMonth() + 1) + '月' + tpPad(d.getDate()) + '日';
-  }
-
-  function tpColumn(id, count, selected, pad) {
-    let items = '';
-    for (let i = 0; i < count; i++) {
-      items += '<span class="tp-item' + (i === selected ? ' is-active' : '') + '" data-v="' + i + '">' + tpPad(i) + '</span>';
+  /** 把用户输入（可含或不含冒号）收敛成合法的 HH:MM；空值回退到 fallback */
+  function normalizeTimeInput(value, fallback) {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (!digits) return fallback;
+    let h;
+    let m;
+    if (digits.length === 3 && Number(digits.slice(0, 2)) > 23) {
+      // 830 这种「一位小时 + 两位分钟」的写法：按 8:30 处理
+      h = Number(digits.slice(0, 1));
+      m = Number(digits.slice(1));
+    } else if (digits.length <= 2) {
+      h = Number(digits);
+      m = 0;
+    } else {
+      h = Number(digits.slice(0, 2));
+      m = Number(digits.slice(2, 4));
     }
-    return '<div class="tp-col" id="' + id + '" data-sel="' + selected + '" style="padding-top:' + pad + 'px;padding-bottom:' + pad + 'px">' + items + '</div>';
+    if (!isFinite(h)) h = 0;
+    if (!isFinite(m)) m = 0;
+    h = Math.min(23, Math.max(0, h));
+    m = Math.min(59, Math.max(0, m));
+    return sheetPad2(h) + ':' + sheetPad2(m);
   }
 
-  function openTimePicker() {
-    const sh = state.sheet;
-    if (!sh) return;
-    if (sheetRoot.querySelector('.tp-layer')) return;
-    const cur = /^\d{2}:\d{2}$/.test(sh.time || '') ? sh.time : U.hm(new Date());
-    const hh = Number(cur.slice(0, 2));
-    const mm = Number(cur.slice(3, 5));
-    const pad = TP_ITEM_H * ((TP_VISIBLE - 1) / 2);
-
-    const layer = document.createElement('div');
-    layer.className = 'tp-layer';
-    layer.innerHTML =
-      '<div class="tp-backdrop" data-action="tp-cancel"></div>' +
-      '<div class="tp-card" role="dialog" aria-modal="true" aria-label="选择日期和时间">' +
-      '<h3 class="tp-title">选择日期和时间</h3>' +
-      '<button type="button" class="tp-date" data-action="tp-date">' +
-      '<span>日期</span><b id="tp-date-label">' + tpDateLabel(sh.date) + '</b>' + icon('chevron-right') +
-      '</button>' +
-      '<input id="tp-date-native" class="tp-native" type="date" value="' + esc(sh.date) + '" tabindex="-1" aria-hidden="true">' +
-      '<div class="tp-wheel">' +
-      '<div class="tp-band" aria-hidden="true"></div>' +
-      tpColumn('tp-hours', 24, hh, pad) +
-      tpColumn('tp-mins', 60, mm, pad) +
-      '</div>' +
-      '<div class="tp-actions">' +
-      '<button type="button" class="btn-ghost" data-action="tp-cancel">取消</button>' +
-      '<button type="button" class="btn-primary" data-action="tp-ok">确定</button>' +
-      '</div>' +
-      '</div>';
-    sheetRoot.appendChild(layer);
-
-    // 收起键盘，别挡住选择器
-    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-
-    const hours = layer.querySelector('#tp-hours');
-    const mins = layer.querySelector('#tp-mins');
-    hours.scrollTop = hh * TP_ITEM_H;
-    mins.scrollTop = mm * TP_ITEM_H;
-    [hours, mins].forEach(function (box) {
-      box.addEventListener('scroll', function () { tpSync(box); }, { passive: true });
-    });
-    // 等布局稳定后再定位一次，保证首屏就对准当前时间
-    requestAnimationFrame(function () {
-      hours.scrollTop = hh * TP_ITEM_H;
-      mins.scrollTop = mm * TP_ITEM_H;
-      tpSync(hours);
-      tpSync(mins);
-    });
-
-    const native = layer.querySelector('#tp-date-native');
-    native.addEventListener('change', function () {
-      if (!U.isYmd(native.value)) return;
-      layer.querySelector('#tp-date-label').textContent = tpDateLabel(native.value);
-    });
-
-    state.timePicker = true;
+  /** 边打边格式化：1930 -> 19:30 */
+  function maskTimeField(el) {
+    const digits = String(el.value || '').replace(/\D/g, '').slice(0, 4);
+    const next = digits.length > 2 ? digits.slice(0, 2) + ':' + digits.slice(2) : digits;
+    if (el.value !== next) el.value = next;
   }
 
-  /** 滚动后按位置吸附，更新高亮与 data-sel */
-  function tpSync(box) {
-    const count = box.children.length;
-    const idx = Math.max(0, Math.min(count - 1, Math.round(box.scrollTop / TP_ITEM_H)));
-    if (String(box.dataset.sel) === String(idx)) return;
-    box.dataset.sel = idx;
-    for (let i = 0; i < count; i++) {
-      box.children[i].classList.toggle('is-active', i === idx);
-    }
-  }
-
-  function tpPickDate() {
-    const input = document.getElementById('tp-date-native');
+  function pickSheetDate() {
+    const input = document.getElementById('date-input');
     if (!input) return;
     try {
       if (typeof input.showPicker === 'function') input.showPicker();
@@ -9531,26 +9354,8 @@ html[data-mode='dark'] .tutorial-art {
     }
   }
 
-  function closeTimePicker(commit) {
-    const layer = sheetRoot.querySelector('.tp-layer');
-    if (!layer) return;
-    state.timePicker = false;
-    if (commit && state.sheet) {
-      const h = Number(layer.querySelector('#tp-hours').dataset.sel || 0);
-      const m = Number(layer.querySelector('#tp-mins').dataset.sel || 0);
-      const native = layer.querySelector('#tp-date-native');
-      state.sheet.time = tpPad(h) + ':' + tpPad(m);
-      if (native && U.isYmd(native.value)) state.sheet.date = native.value;
-      layer.remove();
-      renderSheet({ focus: false });
-      return;
-    }
-    layer.remove();
-  }
-
   function closeSheet() {
     if (!sheetRoot.classList.contains('is-open')) return;
-    state.timePicker = false;
     sheetRoot.classList.remove('is-open');
     document.body.classList.remove('sheet-open');
     setTimeout(function () {
@@ -9586,8 +9391,10 @@ html[data-mode='dark'] .tutorial-art {
     if (!sh) return;
     const amountEl = document.getElementById('amount-input');
     const noteEl = document.getElementById('note-input');
-    // 时间由选择器维护在 state 里，这里只做兜底校验
-    const time = /^\d{2}:\d{2}$/.test(sh.time || '') ? sh.time : U.hm(new Date());
+    const timeEl = document.getElementById('time-input');
+    const dateEl = document.getElementById('date-input');
+    const time = normalizeTimeInput(timeEl ? timeEl.value : sh.time, sh.time || U.hm(new Date()));
+    const date = dateEl && U.isYmd(dateEl.value) ? dateEl.value : sh.date;
     const amount = U.round2(U.toNumber(amountEl ? amountEl.value : sh.amount));
     const note = noteEl ? noteEl.value.trim().slice(0, 30) : sh.note;
     const type = sh.type;
@@ -9611,7 +9418,7 @@ html[data-mode='dark'] .tutorial-art {
           amount: amount,
           note: note,
           time: time,
-          date: sh.date,
+          date: date,
           uneaten: amount === 0
         });
         toast(amount === 0 ? '已标记未用餐' : '已保存修改');
@@ -9622,7 +9429,7 @@ html[data-mode='dark'] .tutorial-art {
           amount: amount,
           note: note,
           uneaten: amount === 0,
-          date: sh.date,
+          date: date,
           time: time
         });
         const cat = type === 'income' ? INCOME : CAT_MAP[category] || CAT_MAP.other;
@@ -10070,17 +9877,8 @@ html[data-mode='dark'] .tutorial-art {
       case 'save-tx':
         saveSheet();
         break;
-      case 'open-time-picker':
-        openTimePicker();
-        break;
-      case 'tp-ok':
-        closeTimePicker(true);
-        break;
-      case 'tp-cancel':
-        closeTimePicker(false);
-        break;
-      case 'tp-date':
-        tpPickDate();
+      case 'pick-date':
+        pickSheetDate();
         break;
       case 'nav-day':
         goDay(target.dataset.date);
@@ -10351,6 +10149,16 @@ html[data-mode='dark'] .tutorial-art {
       refreshNoteSearch(state.noteQuery || '');
       return;
     }
+    if (t.id === 'date-input') {
+      if (U.isYmd(t.value) && state.sheet) {
+        state.sheet.date = t.value;
+        const label = document.getElementById('sheet-date-value');
+        if (label) label.textContent = t.value === U.today() ? '今天' : U.fullDateLabel(t.value);
+        const sub = document.getElementById('sheet-head-sub');
+        if (sub) sub.textContent = dateLabelForSheet(t.value) + ' · ' + (state.sheet.type === 'income' ? '收入' : '支出');
+      }
+      return;
+    }
     if (t.matches('[data-reminder-time]')) {
       Store.setReminder(t.dataset.reminderTime, { time: t.value || '21:00' });
       return;
@@ -10405,6 +10213,10 @@ html[data-mode='dark'] .tutorial-art {
       refreshNoteSearch(t.value);
     } else if (t.id === 'note-input' && state.sheet) {
       state.sheet.note = t.value;
+    } else if (t.id === 'time-input') {
+      maskTimeField(t);
+      // 只记录有效值：清空时不覆盖，保存时才能回退到原时间
+      if (state.sheet && t.value) state.sheet.time = t.value;
     }
     // 预算页：总预算 / 分类预算任一变化，立即刷新“可自由分配”
     if (t.closest && t.closest('#budget-form')) updateAllocCard();
@@ -10423,11 +10235,23 @@ html[data-mode='dark'] .tutorial-art {
     }
   }
 
+  function onFocusIn(e) {
+    if (e.target && e.target.id === 'time-input') {
+      try { e.target.select(); } catch (err) { /* 忽略 */ }
+    }
+  }
+
+  function onFocusOut(e) {
+    if (!e.target || e.target.id !== 'time-input' || !state.sheet) return;
+    const v = normalizeTimeInput(e.target.value, state.sheet.time || U.hm(new Date()));
+    e.target.value = v;
+    state.sheet.time = v;
+  }
+
   function onKeydown(e) {
     if (e.key === 'Escape') {
       if (state.tutorial) closeTutorial();
       else if (state.modalResolve) resolveModal(false);
-      else if (state.timePicker) closeTimePicker(false);
       else if (state.picker) closePicker();
       else if (state.sheet) closeSheet();
       else if (state.renaming) closeRename();
@@ -10489,6 +10313,8 @@ html[data-mode='dark'] .tutorial-art {
     }
 
     document.addEventListener('click', onClick);
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
     document.addEventListener('pointerdown', onCategoryGripDown);
     document.addEventListener('keydown', onCategoryGripKey);
     document.addEventListener('change', onChange);

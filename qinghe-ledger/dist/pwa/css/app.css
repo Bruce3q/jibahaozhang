@@ -2711,116 +2711,34 @@ html[data-mode='dark'] .type-toggle button.is-active {
   font-style: normal;
 }
 
-/* 记账时间：点开日期时间选择器 */
-.sheet-date .sheet-time {
-  margin-left: auto;
+/* 记账时间：直接输入 HH:MM */
+.sheet-date-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 10px;
-  border-radius: 11px;
-  background: var(--card-2);
-  border: 1px solid var(--line);
-  color: var(--text-2);
-  font-size: 12.5px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
+  padding: 0;
+  font-size: 10.5px;
+  color: var(--text-3);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.sheet-date .sheet-time:active {
-  background: var(--primary-soft);
-  border-color: var(--primary);
-}
-
-.sheet-time .icon {
+.sheet-date-btn .icon {
   width: 13px;
   height: 13px;
-  opacity: 0.75;
 }
 
-.sheet-time #sheet-time-value {
-  color: var(--text);
-}
-
-.sheet-time .tp-caret {
+.sheet-date-btn .sheet-caret {
   width: 11px;
   height: 11px;
   opacity: 0.5;
 }
 
-/* ---------------- 日期 / 时间选择器 ---------------- */
-
-.tp-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 6;
-  display: flex;
-  align-items: flex-end;
+.sheet-date-btn:active {
+  color: var(--primary-strong);
 }
 
-.tp-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(10, 18, 12, 0.42);
-  backdrop-filter: blur(2px);
-}
-
-.tp-card {
-  position: relative;
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 16px 18px calc(14px + env(safe-area-inset-bottom));
-  border-radius: 28px 28px 0 0;
-  background: var(--sheet-bg);
-  box-shadow: 0 -18px 44px rgba(12, 26, 17, 0.24);
-  animation: tp-in 0.26s cubic-bezier(0.22, 0.9, 0.3, 1) both;
-}
-
-@keyframes tp-in {
-  from {
-    opacity: 0.5;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.tp-title {
-  margin: 2px 0 8px;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.tp-date {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px 2px;
-  font-size: 14px;
-  color: var(--text-2);
-}
-
-.tp-date b {
-  margin-left: auto;
-  font-weight: 600;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.tp-date .icon {
-  width: 15px;
-  height: 15px;
-  color: var(--text-3);
-}
-
-.tp-native {
+/* 系统日期选择器的载体：视觉隐藏但可唤起 */
+.sheet-date-native {
   position: fixed;
   left: 8px;
   bottom: 8px;
@@ -2831,84 +2749,43 @@ html[data-mode='dark'] .type-toggle button.is-active {
   pointer-events: none;
 }
 
-.tp-wheel {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  height: 220px;
-  margin-top: 2px;
-  overflow: hidden;
-}
-
-/* 中间高亮条：位置 = (可见行数-1)/2 × 行高 = 88px */
-.tp-band {
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 88px;
-  height: 44px;
-  border-radius: 14px;
-  background: var(--bg-deep);
-  box-shadow: inset 0 0 0 1px rgba(79, 157, 105, 0.14);
-  pointer-events: none;
-}
-
-html[data-mode='dark'] .tp-band {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
-
-.tp-col {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  max-width: 118px;
-  height: 220px;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  text-align: center;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-}
-
-.tp-col::-webkit-scrollbar {
-  display: none;
-}
-
-.tp-item {
-  display: flex;
+.sheet-date .sheet-time {
+  margin-left: auto;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  height: 44px;
-  scroll-snap-align: center;
-  font-size: 17px;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 11px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  cursor: text;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sheet-date .sheet-time:focus-within {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.sheet-time .icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.75;
+}
+
+.sheet-time input {
+  width: 48px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
-  color: var(--text-3);
-  transition: color 0.15s ease;
-}
-
-.tp-item.is-active {
-  color: var(--primary-strong);
-  font-weight: 700;
-}
-
-html[data-mode='dark'] .tp-item.is-active {
-  color: var(--primary);
-}
-
-.tp-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.tp-actions .btn-primary,
-.tp-actions .btn-ghost {
-  min-height: 46px;
+  text-align: center;
+  letter-spacing: 0.02em;
+  outline: none;
 }
 
 .btn-save {
