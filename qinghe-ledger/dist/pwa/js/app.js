@@ -1067,7 +1067,16 @@
       return Object.assign({}, it, { checked: !it.duplicate });
     });
     if (!rows.length) {
-      toast((result.warnings && result.warnings[0]) || '没有可入账的交易', 'warn');
+      // 区分「文件里根本没有明细」和「有明细但都被过滤」
+      const scanned = result.scanned || 0;
+      let msg;
+      if (!scanned) {
+        msg = '这个文件里没有交易明细，多半是导出不完整，请重新从微信/支付宝导出';
+      } else {
+        msg = '没有可入账的交易（检查了 ' + scanned + ' 行' +
+          (result.warnings && result.warnings.length ? '，' + result.warnings[0] : '') + '）';
+      }
+      toast(msg, 'warn');
       return;
     }
     state.importRows = rows;
@@ -1086,7 +1095,7 @@
     if (result.warnings && result.warnings.length) {
       const tip = document.createElement('p');
       tip.className = 'form-tip';
-      tip.textContent = result.warnings[0] + (result.warnings.length > 1 ? ' 等 ' + result.warnings.length + ' 条提示' : '');
+      tip.textContent = result.warnings.join('；');
       const list = modalRoot.querySelector('.import-list');
       if (list) list.parentNode.insertBefore(tip, list);
     }
@@ -1388,7 +1397,7 @@
 
       '<section class="about-card">' +
       '<span class="about-logo">' + icon('leaf') + '</span>' +
-      '<p>记把好账 v1.6.13</p>' +
+      '<p>记把好账 v1.6.14</p>' +
       '<span>没有广告，没有社交，没有账号。所有数据仅保存在你的浏览器本地。</span>' +
       '<span class="storage-note">' + (Store.isStorageOK() ? icon('lock') + '本地存储正常' : icon('info') + '本地存储不可用，请勿清理浏览器数据') + '</span>' +
       (meta.lastBackupAt ? '<span class="storage-note">上次备份：' + esc(U.fullDateLabel(U.ymd(new Date(meta.lastBackupAt)))) + '</span>' : '') +
@@ -2009,7 +2018,7 @@
     Store.markOnboarded();
     modalRoot.classList.remove('is-open');
     setTimeout(function () {
-      if (!state.tutorial && !state.modalResolve) modalRoot.innerHTML = '';
+      if (!state.tutorial && !state.modalResolve && !modalRoot.classList.contains('is-open')) modalRoot.innerHTML = '';
       maybeAutoRequestNotify();
     }, 700);
   }
@@ -2457,7 +2466,7 @@
     if (state.modalResolve) return;
     modalRoot.classList.remove('is-open');
     setTimeout(function () {
-      if (!state.modalResolve) modalRoot.innerHTML = '';
+      if (!state.modalResolve && !modalRoot.classList.contains('is-open')) modalRoot.innerHTML = '';
     }, 180);
   }
 
