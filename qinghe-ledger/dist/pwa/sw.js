@@ -2,7 +2,7 @@
  * 仅缓存应用外壳（HTML/CSS/JS/图标），账本数据全部在 localStorage，不经过网络。
  * 更新策略：导航请求 network-first（离线回退缓存），静态资源 stale-while-revalidate。
  */
-const VERSION = 'qinghe-v32';
+const VERSION = 'qinghe-v33';
 const SHELL = [
   './',
   './index.html',

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.qinghe.ledger"
-    android:versionCode="29"
-    android:versionName="1.6.13">
+    android:versionCode="30"
+    android:versionName="1.6.14">
 
     <!-- WebView 通过本地拦截加载 assets，不访问互联网；INTERNET 仅为引擎兼容保留 -->
     <uses-permission android:name="android.permission.INTERNET" />
