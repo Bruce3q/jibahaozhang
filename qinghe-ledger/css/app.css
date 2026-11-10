@@ -2788,6 +2788,14 @@ html[data-mode='dark'] .type-toggle button.is-active {
   outline: none;
 }
 
+/* 禁用态要看得出来，否则用户会以为“点了没反应” */
+.btn-primary:disabled,
+.btn-primary[disabled] {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
 .btn-save {
   margin-top: 13px;
   height: 52px;
@@ -4306,17 +4314,65 @@ html[data-mode='dark'] .tutorial-art {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 0;
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
   border-bottom: 1px solid var(--line);
+  background: transparent;
   font-size: 12px;
   color: var(--text-2);
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
+
+.import-all-row:active {
+  opacity: 0.7;
+}
+
+.import-all-row:disabled {
+  opacity: 0.5;
+}
+
+.import-all-box {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.6px solid var(--text-3);
+  border-radius: 6px;
+  background: transparent;
+}
+
+.import-all-box::after {
+  content: "";
+  width: 9px;
+  height: 5px;
+  margin-top: -2px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg);
+  opacity: 0;
+}
+
+.import-all-row.is-on .import-all-box {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.import-all-row.is-on .import-all-box::after {
+  opacity: 1;
+}
+
 .import-all-row em {
   margin-left: auto;
   font-style: normal;
   color: var(--text-3);
   font-size: 11px;
 }
+
 .import-list {
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -4334,38 +4390,50 @@ html[data-mode='dark'] .tutorial-art {
   opacity: 0.58;
 }
 .import-check {
-  position: relative;
   flex: none;
   width: 22px;
-  padding-top: 2px;
-}
-.import-check input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.import-check span {
-  display: block;
-  width: 20px;
-  height: 20px;
-  border: 1.6px solid var(--line-strong);
+  height: 22px;
+  margin-top: 2px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.6px solid var(--text-3);
   border-radius: 7px;
-  background: var(--card);
+  background: transparent;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
 }
-.import-check input:checked + span {
-  border-color: var(--primary);
-  background: var(--primary);
-}
-.import-check input:checked + span::after {
+
+.import-check::after {
   content: "";
-  display: block;
   width: 9px;
   height: 5px;
-  margin: 4px 0 0 4px;
+  margin-top: -2px;
   border-left: 2px solid #fff;
   border-bottom: 2px solid #fff;
   transform: rotate(-45deg);
+  opacity: 0;
 }
+
+.import-check.is-on {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.import-check.is-on::after {
+  opacity: 1;
+}
+
+.import-check:active {
+  transform: scale(0.9);
+}
+
+.import-check:disabled {
+  opacity: 0.35;
+}
+
 .import-main {
   flex: 1;
   min-width: 0;

@@ -1039,7 +1039,9 @@
     return (state.importRows || []).map(function (it, i) {
       return (
         '<div class="import-row' + (it.duplicate ? ' is-dup' : '') + '" data-idx="' + i + '">' +
-        '<label class="import-check"><input type="checkbox" data-import-check="' + i + '"' + (it.checked ? ' checked' : '') + (it.duplicate ? ' disabled' : '') + '><span></span></label>' +
+        '<button type="button" class="import-check' + (it.checked ? ' is-on' : '') + '" data-action="toggle-import-row"' +
+        ' data-idx="' + i + '" role="checkbox" aria-checked="' + (it.checked ? 'true' : 'false') + '"' +
+        (it.duplicate ? ' disabled' : '') + ' aria-label="选择这条账单"></button>' +
         '<div class="import-main">' +
         '<div class="import-line"><b>' + esc(it.note || '导入账单') + '</b><em class="' + (it.type === 'income' ? 'income' : 'expense') + '">' + (it.type === 'income' ? '+' : '−') + money(it.amount) + '</em></div>' +
         '<div class="import-sub">' + esc(it.date) + ' ' + esc(it.time) + (it.duplicate ? ' · 已存在，将跳过' : '') + '</div>' +
@@ -1053,13 +1055,50 @@
     const rows = state.importRows || [];
     const checked = rows.filter(function (r) { return r.checked; }).length;
     const dup = rows.filter(function (r) { return r.duplicate; }).length;
+    const selectable = rows.filter(function (r) { return !r.duplicate; });
     const sum = rows.reduce(function (a, r) { return a + (r.checked ? r.amount : 0); }, 0);
     const el = document.getElementById('import-summary');
     if (el) el.textContent = '已选 ' + checked + ' / ' + rows.length + ' 笔 · 合计 ' + money(sum) + (dup ? ' · 重复 ' + dup + ' 笔' : '');
-    const all = document.getElementById('import-all');
-    if (all) all.checked = rows.length > 0 && checked === rows.length;
+
+    // 同步每行的勾选按钮
+    modalRoot.querySelectorAll('[data-action="toggle-import-row"]').forEach(function (btn) {
+      const row = rows[Number(btn.dataset.idx)];
+      if (!row) return;
+      btn.classList.toggle('is-on', !!row.checked);
+      btn.setAttribute('aria-checked', row.checked ? 'true' : 'false');
+      btn.disabled = !!row.duplicate;
+    });
+    // 同步全选按钮
+    const all = modalRoot.querySelector('[data-action="toggle-import-all"]');
+    if (all) {
+      const on = selectable.length > 0 && selectable.every(function (r) { return r.checked; });
+      all.classList.toggle('is-on', on);
+      all.setAttribute('aria-checked', on ? 'true' : 'false');
+      // 不做 disabled：按钮点了要有反馈（全重复时给一句说明），
+      // 否则用户只会遇到“点了没反应”
+      all.disabled = false;
+    }
     const btn = document.getElementById('import-confirm');
     if (btn) btn.disabled = checked === 0;
+  }
+
+  function toggleImportAll() {
+    const rows = state.importRows || [];
+    const selectable = rows.filter(function (r) { return !r.duplicate; });
+    if (!selectable.length) {
+      toast('这批账单都已存在，没有可入账的交易', 'warn');
+      return;
+    }
+    const next = !selectable.every(function (r) { return r.checked; });
+    selectable.forEach(function (r) { r.checked = next; });
+    updateImportSummary();
+  }
+
+  function toggleImportRow(idx) {
+    const row = (state.importRows || [])[idx];
+    if (!row || row.duplicate) return;
+    row.checked = !row.checked;
+    updateImportSummary();
   }
 
   function showImportPreview(result) {
@@ -1085,7 +1124,8 @@
       '<div class="modal-card import-modal" role="dialog" aria-modal="true" aria-label="导入账单预览">' +
       '<div class="modal-head"><h3>导入预览</h3><button class="icon-btn" data-action="close-import" aria-label="关闭">' + icon('close') + '</button></div>' +
       '<p class="modal-text">来自 ' + esc(result.source || '账单文件') + '，解析后仅在本地处理。请确认交易和分类，重复账单会自动跳过。</p>' +
-      '<label class="import-all-row"><input type="checkbox" id="import-all" checked><span>全选未重复交易</span><em id="import-summary"></em></label>' +
+      '<button type="button" class="import-all-row is-on" data-action="toggle-import-all" role="checkbox" aria-checked="true">' +
+      '<span class="import-all-box" aria-hidden="true"></span><span>全选未重复交易</span><em id="import-summary"></em></button>' +
       '<div class="import-list">' + importRowsHTML() + '</div>' +
       '<div class="modal-actions"><button class="btn-ghost" data-action="close-import">取消</button>' +
       '<button class="btn-primary" id="import-confirm" data-action="confirm-import">确认入账</button></div>' +
@@ -1397,7 +1437,7 @@
 
       '<section class="about-card">' +
       '<span class="about-logo">' + icon('leaf') + '</span>' +
-      '<p>记把好账 v1.6.14</p>' +
+      '<p>记把好账 v1.6.15</p>' +
       '<span>没有广告，没有社交，没有账号。所有数据仅保存在你的浏览器本地。</span>' +
       '<span class="storage-note">' + (Store.isStorageOK() ? icon('lock') + '本地存储正常' : icon('info') + '本地存储不可用，请勿清理浏览器数据') + '</span>' +
       (meta.lastBackupAt ? '<span class="storage-note">上次备份：' + esc(U.fullDateLabel(U.ymd(new Date(meta.lastBackupAt)))) + '</span>' : '') +
@@ -2738,6 +2778,18 @@
       case 'import-bill':
         requestImport();
         break;
+      case 'close-import':
+        closeImport();
+        break;
+      case 'confirm-import':
+        confirmImport();
+        break;
+      case 'toggle-import-all':
+        toggleImportAll();
+        break;
+      case 'toggle-import-row':
+        toggleImportRow(Number(target.dataset.idx));
+        break;
       case 'open-day-note':
         openDayNote(target.dataset.date);
         break;
@@ -2992,23 +3044,6 @@
       const file = t.files && t.files[0];
       t.value = '';
       handleRestoreFile(file);
-      return;
-    }
-    if (t.id === 'import-all' && state.importRows) {
-      state.importRows.forEach(function (r) {
-        if (!r.duplicate) r.checked = t.checked;
-      });
-      document.querySelectorAll('[data-import-check]').forEach(function (box, i) {
-        const row = state.importRows[Number(box.dataset.importCheck)];
-        if (row && !row.duplicate) box.checked = row.checked;
-      });
-      updateImportSummary();
-      return;
-    }
-    if (t.matches('[data-import-check]') && state.importRows) {
-      const row = state.importRows[Number(t.dataset.importCheck)];
-      if (row) row.checked = t.checked;
-      updateImportSummary();
       return;
     }
     if (t.matches('[data-import-cat]') && state.importRows) {
