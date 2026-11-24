@@ -8862,6 +8862,11 @@ html[data-mode='dark'] .tutorial-art {
       '<div class="row-main"><div class="row-title">分类管理</div><div class="row-sub">' + CATS.length + ' 个支出分类 · 新增或删除</div></div>' +
       '<span class="row-arrow">' + icon('chevron-right') + '</span>' +
       '</button>' +
+      '<button class="list-row" data-action="open-cycle">' +
+      '<span class="row-icon primary">' + icon('calendar') + '</span>' +
+      '<div class="row-main"><div class="row-title">记账周期</div><div class="row-sub">' + cycleDesc() + '</div></div>' +
+      '<span class="row-arrow">' + icon('chevron-right') + '</span>' +
+      '</button>' +
       '</section>' +
 
       '<section class="group">' +
@@ -8923,12 +8928,6 @@ html[data-mode='dark'] .tutorial-art {
       '<label class="currency-input"><input type="text" maxlength="3" value="' + esc(s.currency) + '" data-currency aria-label="货币单位"></label>' +
       '</div>' +
       '<p class="form-tip">可输入 ¥、$、€、£ 或“元”等自定义符号。</p>' +
-      '<div class="setting-divider"></div>' +
-      '<button class="list-row" data-action="open-cycle">' +
-      '<span class="row-icon primary">' + icon('calendar') + '</span>' +
-      '<div class="row-main"><div class="row-title">记账周期</div><div class="row-sub">' + cycleDesc() + '</div></div>' +
-      '<span class="row-arrow">' + icon('chevron-right') + '</span>' +
-      '</button>' +
       '</div>' +
       '</section>' +
 
@@ -8987,7 +8986,7 @@ html[data-mode='dark'] .tutorial-art {
 
       '<section class="about-card">' +
       '<span class="about-logo">' + icon('leaf') + '</span>' +
-      '<p>记把好账 v1.6.16</p>' +
+      '<p>记把好账 v1.6.17</p>' +
       '<span>没有广告，没有社交，没有账号。所有数据仅保存在你的浏览器本地。</span>' +
       '<span class="storage-note">' + (Store.isStorageOK() ? icon('lock') + '本地存储正常' : icon('info') + '本地存储不可用，请勿清理浏览器数据') + '</span>' +
       (meta.lastBackupAt ? '<span class="storage-note">上次备份：' + esc(U.fullDateLabel(U.ymd(new Date(meta.lastBackupAt)))) + '</span>' : '') +
