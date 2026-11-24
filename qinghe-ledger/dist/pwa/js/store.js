@@ -136,6 +136,7 @@
   function defaultSettings() {
     return {
       currency: '¥',
+      cycleStartDay: 1,
       theme: 'matcha',
       themeMode: 'system',
       reminders: {
@@ -233,6 +234,7 @@
       );
     });
     out.settings.recognition = Object.assign({ enabled: false }, out.settings.recognition || {});
+    out.settings.cycleStartDay = Math.min(31, Math.max(1, Math.round(U.toNumber(out.settings.cycleStartDay) || 1)));
     out.settings.quick = Object.assign({ ball: false, notifyQuick: false }, out.settings.quick || {});
     Object.keys(out.budgets.categories).forEach(function (k) {
       out.budgets.categories[k] = Math.max(0, U.toNumber(out.budgets.categories[k]));
@@ -487,6 +489,62 @@
     return map;
   }
 
+  /* ---------------- 记账周期 ---------------- */
+
+  /** 周期起始日：1 = 自然月；15 = 每月 15 日到次月 14 日 */
+  function cycleStartDay() {
+    const n = Math.round(U.toNumber(db && db.settings ? db.settings.cycleStartDay : 1));
+    if (!isFinite(n) || n < 1) return 1;
+    return Math.min(31, n);
+  }
+
+  /** 某月的实际起算日（短月份自动落到月末，例如 31 日在 2 月按 28/29 日算） */
+  function cycleStartInMonth(y, m) {
+    return Math.min(cycleStartDay(), U.daysInMonth(y, m));
+  }
+
+  /** 以 (y, m) 为起始月的那一期 */
+  function periodOfMonth(y, m) {
+    const startDay = cycleStartInMonth(y, m);
+    const nextY = m === 11 ? y + 1 : y;
+    const nextM = (m + 1) % 12;
+    const nextDay = cycleStartInMonth(nextY, nextM);
+    const from = U.ymd(new Date(y, m, startDay));
+    const to = U.ymd(new Date(nextY, nextM, nextDay - 1));
+    const days = Math.round((U.parseYmd(to) - U.parseYmd(from)) / 86400000) + 1;
+    return { from: from, to: to, startY: y, startM: m, key: monthKey(y, m), days: days };
+  }
+
+  /** 某一天所属的那一期 */
+  function periodOf(input) {
+    const now = new Date();
+    const d = typeof input === 'string' ? U.parseYmd(input) : (input instanceof Date ? input : now);
+    if (!d) return periodOfMonth(now.getFullYear(), now.getMonth());
+    let y = d.getFullYear();
+    let m = d.getMonth();
+    if (d.getDate() < cycleStartInMonth(y, m)) {
+      m -= 1;
+      if (m < 0) {
+        m = 11;
+        y -= 1;
+      }
+    }
+    return periodOfMonth(y, m);
+  }
+
+  function currentPeriod() {
+    return periodOf(new Date());
+  }
+
+  function periodSummary(p) {
+    const s = summarize(inRange(p.from, p.to));
+    s.from = p.from;
+    s.to = p.to;
+    s.days = p.days;
+    return s;
+  }
+
+  /** 自然月汇总：日历页按自然月展示，不受记账周期影响 */
   function monthSummary(year, month) {
     const from = U.ymd(new Date(year, month, 1));
     const to = U.ymd(new Date(year, month, U.daysInMonth(year, month)));
@@ -797,9 +855,8 @@
       db.budgets.categories[k] = Math.max(0, U.round2(U.toNumber(db.budgets.categories[k])));
     });
     // 快照当前月的总预算，供累计结余按“当月预算”计算，避免历史月份被新预算覆盖。
-    const now = new Date();
-    const key = monthKey(now.getFullYear(), now.getMonth());
-    db.budgets.monthlyHistory[key] = monthly;
+    const p = currentPeriod();
+    db.budgets.monthlyHistory[p.key] = monthly;
     commit();
   }
 
@@ -822,23 +879,25 @@
     return h == null ? U.round2(db.budgets.monthly || 0) : U.round2(h);
   }
 
-  /** 预算口径的已消费：有手动校准就用校准值，否则用账单合计。 */
+  /** 预算口径的已消费（按记账周期）：有手动校准就用校准值，否则用该期账单合计。 */
   function effectiveSpent(year, month) {
     const cal = getCalibration(year, month);
     if (cal != null) return cal;
-    return monthSummary(year, month).expense;
+    return periodSummary(periodOfMonth(year, month)).expense;
   }
 
   function budgetStatus(year, month) {
-    const now = new Date();
-    const isCurrent = now.getFullYear() === year && now.getMonth() === month;
-    const dim = U.daysInMonth(year, month);
-    const actual = monthSummary(year, month).expense;
+    const p = periodOfMonth(year, month);
+    const today = U.today();
+    const isCurrent = today >= p.from && today <= p.to;
+    const actual = periodSummary(p).expense;
     const spent = effectiveSpent(year, month);
     const total = monthBudget(year, month);
     const remaining = U.round2(total - spent);
-    const daysLeft = isCurrent ? dim - now.getDate() + 1 : dim;
-    const dailyAvg = total > 0 ? total / dim : 0;
+    const daysLeft = isCurrent
+      ? Math.round((U.parseYmd(p.to) - U.parseYmd(today)) / 86400000) + 1
+      : p.days;
+    const dailyAvg = total > 0 ? total / p.days : 0;
     const todayAvailable = total > 0 && remaining > 0 ? remaining / Math.max(1, daysLeft) : 0;
     return {
       total: total,
@@ -852,71 +911,79 @@
       dailyAvg: U.round2(dailyAvg),
       todayAvailable: U.round2(todayAvailable),
       daysLeft: daysLeft,
-      daysInMonth: dim
+      daysInMonth: p.days,
+      days: p.days,
+      from: p.from,
+      to: p.to,
+      period: p
     };
   }
 
-  /** 单月结余；没有账单、校准或历史预算的月份记为 0，避免把当前预算套到所有空月份。 */
+  /** 单期结余；没有账单、校准或历史预算的期记为 0，避免把当前预算套到所有空期。 */
   function monthBalance(y, m) {
-    const key = monthKey(y, m);
+    const p = periodOfMonth(y, m);
+    const key = p.key;
     const cal = getCalibration(y, m);
     const spent = effectiveSpent(y, m);
-    const now = new Date();
-    const isCurrent = y === now.getFullYear() && m === now.getMonth();
+    const isCurrent = key === currentPeriod().key;
     const hasData = spent > 0 || cal != null || db.budgets.monthlyHistory[key] != null || isCurrent;
     if (!hasData) return 0;
     return U.round2(monthBudget(y, m) - spent);
   }
 
-  /** 近 N 个月结余：单月结余 = 当月总预算 − 当月实际支出（可按校准值）。 */
+  /** 近 N 期结余：单期结余 = 该期总预算 − 该期实际支出（可按校准值）。 */
   function balanceHistory(count) {
     const n = count || 12;
-    const now = new Date();
+    const cur = currentPeriod();
     const out = [];
     for (let i = n - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const d = new Date(cur.startY, cur.startM - i, 1);
       const y = d.getFullYear();
       const m = d.getMonth();
-      const budget = monthBudget(y, m);
-      const spent = effectiveSpent(y, m);
+      const p = periodOfMonth(y, m);
       out.push({
-        key: monthKey(y, m),
+        key: p.key,
         year: y,
         month: m,
-        label: (m + 1) + '月',
-        budget: budget,
-        spent: spent,
+        label: cycleStartDay() === 1 ? (m + 1) + '月' : (m + 1) + '/' + cycleStartInMonth(y, m),
+        from: p.from,
+        to: p.to,
+        budget: monthBudget(y, m),
+        spent: effectiveSpent(y, m),
         balance: monthBalance(y, m)
       });
     }
     return out;
   }
 
-  /** 累计结余：从最早一笔账单所在月份累加到当前月。 */
+  /** 累计结余：从最早一笔账单所在的期累加到当前期。 */
   function cumulativeBalance() {
     const list = db.transactions;
-    const now = new Date();
     if (!list.length) {
-      // 没有账单时仍把当前月预算 / 校准计入，避免月中校准后累计结余恒为 0
-      const current = monthBalance(now.getFullYear(), now.getMonth());
+      const cur = currentPeriod();
+      const current = monthBalance(cur.startY, cur.startM);
       return { total: current, months: current === 0 ? 0 : 1 };
     }
     let first = list[0].date;
     list.forEach(function (t) {
       if (t.date < first) first = t.date;
     });
-    const start = U.parseYmd(first);
+    const startP = periodOf(first);
+    const endP = currentPeriod();
     let total = 0;
-    let months = 0;
-    const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-    while (cursor <= now) {
-      const y = cursor.getFullYear();
-      const m = cursor.getMonth();
+    let periods = 0;
+    let y = startP.startY;
+    let m = startP.startM;
+    while (y < endP.startY || (y === endP.startY && m <= endP.startM)) {
       total += monthBalance(y, m);
-      months++;
-      cursor.setMonth(cursor.getMonth() + 1);
+      periods++;
+      m++;
+      if (m > 11) {
+        m = 0;
+        y++;
+      }
     }
-    return { total: U.round2(total), months: months };
+    return { total: U.round2(total), months: periods };
   }
 
   /* ---------------- 设置 ---------------- */
@@ -1095,6 +1162,11 @@
     daySummary: daySummary,
     dayMap: dayMap,
     monthSummary: monthSummary,
+    cycleStartDay: cycleStartDay,
+    currentPeriod: currentPeriod,
+    periodOf: periodOf,
+    periodOfMonth: periodOfMonth,
+    periodSummary: periodSummary,
     categoryBreakdown: categoryBreakdown,
     mealBreakdown: mealBreakdown,
     addTransaction: addTransaction,

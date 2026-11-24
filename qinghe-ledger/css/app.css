@@ -2788,6 +2788,63 @@ html[data-mode='dark'] .type-toggle button.is-active {
   outline: none;
 }
 
+/* 记账周期 */
+.cycle-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+
+.cycle-chip {
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+  touch-action: manipulation;
+}
+
+.cycle-chip.is-active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+html[data-mode='dark'] .cycle-chip.is-active {
+  color: var(--primary);
+}
+
+.cycle-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.cycle-custom input {
+  width: 76px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card-2);
+  color: var(--text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.cycle-custom input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card);
+}
+
 /* 禁用态要看得出来，否则用户会以为“点了没反应” */
 .btn-primary:disabled,
 .btn-primary[disabled] {

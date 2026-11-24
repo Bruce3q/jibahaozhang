@@ -177,12 +177,35 @@
    * 首页
    * ======================================================= */
 
+  /* ---------------- 记账周期文案 ---------------- */
+
+  function cycleWord() {
+    return Store.cycleStartDay() === 1 ? '本月' : '本期';
+  }
+
+  function periodRangeText() {
+    if (Store.cycleStartDay() === 1) return '';
+    const p = Store.currentPeriod();
+    return U.monthDayLabel(p.from) + ' - ' + U.monthDayLabel(p.to);
+  }
+
+  /** 首页预算条用的紧凑区间：11/15-12/14 */
+  function periodRangeShort() {
+    if (Store.cycleStartDay() === 1) return '';
+    const p = Store.currentPeriod();
+    const fmt = function (ymd) {
+      return Number(ymd.slice(5, 7)) + '/' + Number(ymd.slice(8, 10));
+    };
+    return fmt(p.from) + '-' + fmt(p.to);
+  }
+
   function renderHome() {
     const today = U.today();
     const todayDate = U.parseYmd(today);
-    const y = todayDate.getFullYear();
-    const m = todayDate.getMonth();
-    const budget = Store.budgetStatus(y, m);
+    const period = Store.currentPeriod();
+    const budget = Store.budgetStatus(period.startY, period.startM);
+    const cw = cycleWord();
+    const range = periodRangeShort();
     const settings = Store.getSettings();
     const demo = Store.getMeta().demo;
 
@@ -193,7 +216,7 @@
       budgetStrip =
         '<button class="budget-strip is-empty" data-action="nav-budget">' +
         '<span class="strip-icon">' + icon('target') + '</span>' +
-        '<span class="strip-main"><strong>本月预算</strong><span>设置后实时查看剩余额度</span></span>' +
+        '<span class="strip-main"><strong>' + cw + '预算</strong><span>设置后实时查看剩余额度</span></span>' +
         '<span class="strip-value">去设置</span>' +
         '<span class="strip-arrow">' + icon('chevron-right') + '</span>' +
         '</button>';
@@ -201,7 +224,7 @@
       budgetStrip =
         '<button class="budget-strip' + (budget.over ? ' is-over' : '') + '" data-action="nav-budget">' +
         '<span class="strip-icon">' + icon(budget.over ? 'fire' : 'target') + '</span>' +
-        '<span class="strip-main"><strong>' + (budget.over ? '本月已超支' : '本月消费剩余') + '</strong><span>已用 ' + Math.round(budget.percent) + '% · 预算 ' + money(budget.total) + '</span></span>' +
+        '<span class="strip-main"><strong>' + (budget.over ? cw + '已超支' : cw + '消费剩余') + '</strong><span>已用 ' + Math.round(budget.percent) + '% · 预算 ' + money(budget.total) + (range ? ' · ' + range : '') + '</span></span>' +
         '<span class="strip-value">' + money(Math.abs(budget.remaining)) + '</span>' +
         '<span class="strip-arrow">' + icon('chevron-right') + '</span>' +
         '<span class="strip-progress"><i style="width:' + U.clamp(budget.percent, 0, 100).toFixed(1) + '%"></i></span>' +
@@ -553,9 +576,15 @@
       };
     }
     if (mode === 'month') {
-      const from = U.ymd(new Date(y, m, 1));
-      const to = U.ymd(new Date(y, m, U.daysInMonth(y, m)));
-      return { from: from, to: to, label: U.monthLabel(d), sub: '自然月', unitDays: U.daysInMonth(y, m) };
+      const p = Store.periodOf(anchor);
+      const natural = Store.cycleStartDay() === 1;
+      return {
+        from: p.from,
+        to: p.to,
+        label: natural ? U.monthLabel(d) : U.monthDayLabel(p.from) + ' - ' + U.monthDayLabel(p.to),
+        sub: natural ? '自然月' : '本期 · 每月 ' + Store.cycleStartDay() + ' 日起',
+        unitDays: p.days
+      };
     }
     if (mode === 'quarter') {
       const q = U.quarter(d);
@@ -592,27 +621,20 @@
         return { expense: s.expense, income: s.income };
       });
     } else if (mode === 'month') {
-      const start = U.parseYmd(range.from);
-      const dim = U.daysInMonth(start.getFullYear(), start.getMonth());
-      buckets = [];
-      labels = [];
-      for (let i = 1; i <= dim; i++) {
-        buckets.push({ expense: 0, income: 0 });
-        labels.push(i + '日');
+      const days = [];
+      let cursor = U.parseYmd(range.from);
+      const endDate = U.parseYmd(range.to);
+      while (cursor <= endDate) {
+        days.push(U.ymd(cursor));
+        cursor = U.addDays(cursor, 1);
       }
+      buckets = days.map(function () { return { expense: 0, income: 0 }; });
+      labels = days.map(function (ymd) { return Number(ymd.slice(8, 10)) + '日'; });
+      const idxOf = {};
+      days.forEach(function (ymd, i) { idxOf[ymd] = i; });
       Store.inRange(range.from, range.to).forEach(function (t) {
-        const idx = U.parseYmd(t.date).getDate() - 1;
-        if (!buckets[idx]) return;
-        if (t.type === 'income') buckets[idx].income += t.amount;
-        else buckets[idx].expense += t.amount;
-      });
-    } else if (mode === 'quarter') {
-      const start = U.parseYmd(range.from);
-      buckets = [0, 1, 2].map(function () { return { expense: 0, income: 0 }; });
-      labels = [0, 1, 2].map(function (i) { return start.getMonth() + i + 1 + '月'; });
-      Store.inRange(range.from, range.to).forEach(function (t) {
-        const idx = U.parseYmd(t.date).getMonth() - start.getMonth();
-        if (!buckets[idx]) return;
+        const idx = idxOf[t.date];
+        if (idx == null) return;
         if (t.type === 'income') buckets[idx].income += t.amount;
         else buckets[idx].expense += t.amount;
       });
@@ -654,7 +676,7 @@
     const trend = trendData(mode, range);
     const cumulative = Store.cumulativeBalance();
     const balances = Store.balanceHistory(12);
-    const currentKey = U.ymd(new Date()).slice(0, 7);
+    const currentKey = Store.currentPeriod().key;
     let cumKey = /^[0-9]{4}-[0-9]{2}$/.test(state.cumMonth || '') ? state.cumMonth : currentKey;
     let cumIndex = -1;
     balances.forEach(function (b, i) { if (b.key === cumKey) cumIndex = i; });
@@ -852,26 +874,110 @@
     if (used) used.textContent = money(U.round2(allocated));
     if (tip) {
       tip.textContent = noBudget && allocated <= 0
-        ? '先填写月度总预算，再把预算分配到三餐和各个分类。'
+        ? '先填写每期总预算，再把预算分配到三餐和各个分类。'
         : over
           ? '分类预算合计已超出总预算 ' + money(Math.abs(free)) + '，请调低分类预算或提高总预算。该数值仅表示预算分配余额，不是消费剩余。'
           : '预算分配余额，仅用于规划尚未分配的分类预算，不等于本月消费剩余。';
     }
   }
 
+  /* ---------------- 记账周期设置 ---------------- */
+
+  function cycleDesc() {
+    const day = Store.cycleStartDay();
+    if (day === 1) return '按自然月（1 日 - 月末）';
+    return '每月 ' + day + ' 日起算 · ' + periodRangeText();
+  }
+
+  /** 按“假设起始日为 day”推算出当前期的区间文案，用于设置时预览 */
+  function cyclePreview(day) {
+    const n = Math.min(31, Math.max(1, Math.round(day) || 1));
+    const startIn = function (y, m) { return Math.min(n, U.daysInMonth(y, m)); };
+    const d = new Date();
+    let y = d.getFullYear();
+    let m = d.getMonth();
+    if (d.getDate() < startIn(y, m)) {
+      m -= 1;
+      if (m < 0) { m = 11; y -= 1; }
+    }
+    const ny = m === 11 ? y + 1 : y;
+    const nm = (m + 1) % 12;
+    const from = U.ymd(new Date(y, m, startIn(y, m)));
+    const to = U.ymd(new Date(ny, nm, startIn(ny, nm) - 1));
+    return U.monthDayLabel(from) + ' - ' + U.monthDayLabel(to);
+  }
+
+  function openCycleSetting() {
+    const cur = Store.cycleStartDay();
+    const presets = [1, 5, 10, 15, 20, 25, 31];
+    modalRoot.innerHTML =
+      '<div class="modal-backdrop" data-action="close-cycle"></div>' +
+      '<div class="modal-card cycle-modal" role="dialog" aria-modal="true" aria-label="记账周期">' +
+      '<div class="modal-head">' +
+      '<div class="modal-head-main"><h3>记账周期</h3><p class="modal-sub">适合月中、月末发工资，按到账日划分每一期</p></div>' +
+      '<button class="icon-btn" data-action="close-cycle" aria-label="关闭">' + icon('close') + '</button>' +
+      '</div>' +
+      '<p class="modal-text">选每月固定的一天作为新一期开始。预算、统计和累计结余都会按这个周期计算；选「1 日」就是自然月。</p>' +
+      '<div class="cycle-presets">' +
+      presets.map(function (d) {
+        return '<button type="button" class="cycle-chip' + (d === cur ? ' is-active' : '') + '" data-action="pick-cycle" data-day="' + d + '">' +
+          (d === 31 ? '月末' : d + ' 日') + '</button>';
+      }).join('') +
+      '</div>' +
+      '<label class="cycle-custom"><span>自定义</span>' +
+      '<input id="cycle-input" type="number" inputmode="numeric" min="1" max="31" value="' + cur + '" aria-label="每月起始日">' +
+      '<span>日</span></label>' +
+      '<p class="form-tip" id="cycle-preview">当前周期：' + cyclePreview(cur) + '</p>' +
+      '<p class="form-tip">改周期只影响以后的分期；如果当前期已有账单和预算，建议在新一期开始时切换。</p>' +
+      '<div class="modal-actions">' +
+      '<button class="btn-ghost" data-action="close-cycle">取消</button>' +
+      '<button class="btn-primary" data-action="save-cycle">保存</button>' +
+      '</div>' +
+      '</div>';
+    modalRoot.classList.add('is-open');
+    setTimeout(function () {
+      const input = document.getElementById('cycle-input');
+      if (input) input.focus({ preventScroll: true });
+    }, 80);
+  }
+
+  function refreshCyclePreview(day) {
+    const tip = document.getElementById('cycle-preview');
+    if (tip) tip.textContent = '当前周期：' + cyclePreview(day);
+    modalRoot.querySelectorAll('.cycle-chip').forEach(function (btn) {
+      btn.classList.toggle('is-active', Number(btn.dataset.day) === Number(day));
+    });
+  }
+
+  function closeCycle() {
+    modalRoot.classList.remove('is-open');
+    setTimeout(function () {
+      if (!modalRoot.classList.contains('is-open')) modalRoot.innerHTML = '';
+    }, 180);
+  }
+
+  function saveCycle() {
+    const input = document.getElementById('cycle-input');
+    const day = Math.min(31, Math.max(1, Math.round(U.toNumber(input ? input.value : 1)) || 1));
+    Store.setSettings({ cycleStartDay: day });
+    closeCycle();
+    toast(day === 1 ? '已改为按自然月统计' : '已改为每月 ' + day + ' 日起算');
+    render();
+  }
+
   function openCalibration() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
+    const p = Store.currentPeriod();
+    const y = p.startY;
+    const m = p.startM;
     const cal = Store.getCalibration(y, m);
-    const actual = Store.monthSummary(y, m).expense;
+    const actual = Store.periodSummary(p).expense;
     state.calibTarget = { y: y, m: m };
     modalRoot.innerHTML =
       '<div class="modal-backdrop" data-action="close-calibration"></div>' +
       '<div class="modal-card calib-modal" role="dialog" aria-modal="true" aria-label="校准本月已消费">' +
-      '<div class="modal-head"><h3>校准本月已消费</h3><button class="icon-btn" data-action="close-calibration" aria-label="关闭">' + icon('close') + '</button></div>' +
-      '<p class="modal-text">用于月中开始使用、或账单不完整时对齐预算。只影响预算与累计结余，不会修改任何账单明细。</p>' +
-      '<label class="money-input large"><span>' + esc(sym()) + '</span><input id="calib-input" type="number" inputmode="decimal" min="0" step="1" value="' + (cal != null ? cal : actual) + '" placeholder="输入本月已消费" aria-label="本月已消费"></label>' +
+      '<div class="modal-head"><h3>校准' + cycleWord() + '已消费</h3><button class="icon-btn" data-action="close-calibration" aria-label="关闭">' + icon('close') + '</button></div>' +
+      '<p class="modal-text">用于期中开始使用、或账单不完整时对齐预算。只影响预算与累计结余，不会修改任何账单明细。</p>' +
+      '<label class="money-input large"><span>' + esc(sym()) + '</span><input id="calib-input" type="number" inputmode="decimal" min="0" step="1" value="' + (cal != null ? cal : actual) + '" placeholder="输入本月已消费" aria-label="本期已消费"></label>' +
       '<p class="form-tip">当前账单合计 ' + money(actual) + '；留空并保存则恢复为按账单自动统计。</p>' +
       '<div class="modal-actions">' +
       '<button class="btn-ghost" data-action="clear-calibration">恢复自动统计</button>' +
@@ -909,19 +1015,20 @@
   }
 
   function renderBudget() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
+    const period = Store.currentPeriod();
+    const y = period.startY;
+    const m = period.startM;
     const status = Store.budgetStatus(y, m);
     const budgets = Store.getBudgets();
-    const month = Store.monthSummary(y, m);
+    const month = Store.periodSummary(period);
     const spentByCat = month.byCat;
+    const cw = cycleWord();
 
     const alloc = budgetAllocation(budgets.monthly, budgets.categories);
     const allocOver = alloc.free < -0.004;
     const allocHTML =
       '<section class="alloc-card' + (allocOver ? ' is-over' : '') + '" id="alloc-card">' +
-      '<div class="alloc-top"><span class="alloc-label">' + icon('sliders') + '本月可自由分配</span><span class="alloc-badge" id="alloc-badge">' +
+      '<div class="alloc-top"><span class="alloc-label">' + icon('sliders') + cw + '可自由分配</span><span class="alloc-badge" id="alloc-badge">' +
       (alloc.monthly <= 0 ? '待设置' : allocOver ? '已超分配' : '分配剩余') + '</span></div>' +
       '<div class="alloc-amount" id="alloc-value">' + (allocOver ? '−' : '') + money(Math.abs(alloc.free)) + '</div>' +
       '<div class="alloc-meta"><span>总预算 <b id="alloc-total">' + money(alloc.monthly) + '</b></span><span>已分配 <b id="alloc-used">' + money(alloc.allocated) + '</b></span></div>' +
@@ -930,14 +1037,14 @@
         ? '先填写月度总预算，再把预算分配到三餐和各个分类。'
         : allocOver
           ? '分类预算合计已超出总预算 ' + money(Math.abs(alloc.free)) + '，请调低分类预算或提高总预算。该数值仅表示预算分配余额，不是消费剩余。'
-          : '预算分配余额，仅用于规划尚未分配的分类预算，不等于本月消费剩余。') +
+          : '预算分配余额，仅用于规划尚未分配的分类预算，不等于' + cw + '消费剩余。') +
       '</p>' +
       '</section>';
 
     // 未设置总预算时不再重复一张空的“消费剩余”卡，避免与分配卡重复
     const hero = status.noBudget ? '' :
       '<section class="budget-hero' + (status.over ? ' is-over' : '') + '">' +
-      '<div class="budget-hero-top"><span>本月消费剩余</span><span class="budget-hero-badge">' + (status.noBudget ? '未设置' : status.over ? '已超支' : '进行中') + '</span></div>' +
+      '<div class="budget-hero-top"><span>' + cw + '消费剩余</span><span class="budget-hero-badge">' + (status.noBudget ? '未设置' : status.over ? '已超支' : '进行中') + '</span></div>' +
       (status.noBudget ? '' : '<div class="budget-hero-amount"><small>' + (status.over ? '已超支' : '剩余可用') + '</small><strong>' + money(Math.abs(status.remaining)) + '</strong></div>') +
       (status.noBudget
         ? '<p class="budget-hero-tip">填写下方月度总预算，开始管理花销</p>'
@@ -948,7 +1055,7 @@
       '<section class="insight-grid">' +
       '<div class="insight"><span>日均预算</span><b>' + money(status.dailyAvg) + '</b></div>' +
       '<div class="insight"><span>今日可用</span><b class="' + (status.over ? 'expense' : 'income') + '">' + (status.over ? money(0) : money(status.todayAvailable)) + '</b></div>' +
-      '<div class="insight"><span>本月剩余天数</span><b>' + status.daysLeft + ' 天</b></div>' +
+      '<div class="insight"><span>' + cw + '剩余天数</span><b>' + status.daysLeft + ' 天</b></div>' +
       '</section>';
 
     const catRow = function (cat) {
@@ -1252,7 +1359,7 @@
     const b = Store.getBudgets();
     const all = Store.all();
     const today = U.today();
-    const month = Store.monthSummary(U.parseYmd(today).getFullYear(), U.parseYmd(today).getMonth());
+    const month = Store.periodSummary(Store.currentPeriod());
     const meta = Store.getMeta();
     const nBridge = notifyBridge();
     const notifyState = nBridge && nBridge.notificationGranted
@@ -1291,8 +1398,8 @@
     };
 
     const budgetSummary = b.monthly > 0
-      ? '月度 ' + money(b.monthly) + ' · 已用 ' + money(month.expense)
-      : '尚未设置月度预算';
+      ? '每期 ' + money(b.monthly) + ' · 已用 ' + money(month.expense)
+      : '尚未设置每期预算';
 
     return page(
       '<header class="me-head">' +
@@ -1301,7 +1408,7 @@
       '<div><h1>记把好账</h1><p>极简 · 无广告 · 数据只存本地</p></div>' +
       '</div>' +
       '<div class="me-metrics">' +
-      '<div><span>本月支出</span><b>' + money(month.expense) + '</b></div>' +
+      '<div><span>' + cycleWord() + '支出</span><b>' + money(month.expense) + '</b></div>' +
       '<div><span>累计账单</span><b>' + all.length + ' 笔</b></div>' +
       '<div><span>预算状态</span><b>' + (b.monthly > 0 ? (month.expense > b.monthly ? '已超支' : '正常') : '未设置') + '</b></div>' +
       '</div>' +
@@ -1379,6 +1486,12 @@
       '<label class="currency-input"><input type="text" maxlength="3" value="' + esc(s.currency) + '" data-currency aria-label="货币单位"></label>' +
       '</div>' +
       '<p class="form-tip">可输入 ¥、$、€、£ 或“元”等自定义符号。</p>' +
+      '<div class="setting-divider"></div>' +
+      '<button class="list-row" data-action="open-cycle">' +
+      '<span class="row-icon primary">' + icon('calendar') + '</span>' +
+      '<div class="row-main"><div class="row-title">记账周期</div><div class="row-sub">' + cycleDesc() + '</div></div>' +
+      '<span class="row-arrow">' + icon('chevron-right') + '</span>' +
+      '</button>' +
       '</div>' +
       '</section>' +
 
@@ -1437,7 +1550,7 @@
 
       '<section class="about-card">' +
       '<span class="about-logo">' + icon('leaf') + '</span>' +
-      '<p>记把好账 v1.6.15</p>' +
+      '<p>记把好账 v1.6.16</p>' +
       '<span>没有广告，没有社交，没有账号。所有数据仅保存在你的浏览器本地。</span>' +
       '<span class="storage-note">' + (Store.isStorageOK() ? icon('lock') + '本地存储正常' : icon('info') + '本地存储不可用，请勿清理浏览器数据') + '</span>' +
       (meta.lastBackupAt ? '<span class="storage-note">上次备份：' + esc(U.fullDateLabel(U.ymd(new Date(meta.lastBackupAt)))) + '</span>' : '') +
@@ -2763,6 +2876,19 @@
       case 'pick-cat-icon':
         selectCategoryIcon(target.dataset.icon);
         break;
+      case 'open-cycle':
+        openCycleSetting();
+        break;
+      case 'close-cycle':
+        closeCycle();
+        break;
+      case 'pick-cycle':
+        refreshCyclePreview(Number(target.dataset.day));
+        document.getElementById('cycle-input').value = target.dataset.day;
+        break;
+      case 'save-cycle':
+        saveCycle();
+        break;
       case 'open-calibration':
         openCalibration();
         break;
@@ -3018,6 +3144,10 @@
       const clearBtn = document.querySelector('[data-action="note-range-clear"]');
       if (clearBtn) clearBtn.disabled = !(state.noteFrom || state.noteTo);
       refreshNoteSearch(state.noteQuery || '');
+      return;
+    }
+    if (t.id === 'cycle-input') {
+      refreshCyclePreview(U.toNumber(t.value));
       return;
     }
     if (t.id === 'date-input') {
