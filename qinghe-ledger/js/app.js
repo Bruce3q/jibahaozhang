@@ -275,7 +275,9 @@
   function calendarCell(date, opts) {
     const d = U.parseYmd(date);
     const info = opts.map[date] || { expense: 0, cats: {} };
-    const inMonth = d.getMonth() === opts.month;
+    const inMonth = opts.from && opts.to
+      ? (date >= opts.from && date <= opts.to)
+      : d.getMonth() === opts.month;
     const isToday = date === U.today();
     const isSelected = date === opts.selected;
     const dots = Object.keys(info.cats)
@@ -302,6 +304,31 @@
     );
   }
 
+  /** 把任意区间补齐成整周（周一起始），用于渲染「期」的日历 */
+  function rangeGrid(from, to) {
+    const start = U.startOfWeek(U.parseYmd(from));
+    const endBase = U.parseYmd(to);
+    const padRight = 6 - ((endBase.getDay() + 6) % 7); // 补到本周日
+    const end = U.addDays(endBase, padRight);
+    const out = [];
+    let cur = start;
+    while (cur <= end && out.length < 42) {
+      out.push(U.ymd(cur));
+      cur = U.addDays(cur, 1);
+    }
+    return out;
+  }
+
+  /** 区间标题：11月15日 - 12月14日（跨年时补上年份） */
+  function periodTitle(p) {
+    const a = U.parseYmd(p.from);
+    const b = U.parseYmd(p.to);
+    const left = a.getFullYear() === b.getFullYear()
+      ? U.monthDayLabel(p.from)
+      : a.getFullYear() + '年' + U.monthDayLabel(p.from);
+    return left + ' - ' + U.monthDayLabel(p.to);
+  }
+
   function renderCalendar() {
     const view = state.cal.view;
     const selected = state.cal.selected;
@@ -316,17 +343,27 @@
     let rangeText;
 
     if (view === 'month') {
-      title = U.monthLabel(selected);
-      const grid = U.monthGrid(y, m);
-      const map = Store.dayMap(grid[0], grid[41]);
+      const natural = Store.cycleStartDay() === 1;
+      const p = Store.periodOf(selected || cursor);
+      title = natural ? U.monthLabel(selected) : periodTitle(p);
+      const grid = natural ? U.monthGrid(y, m) : rangeGrid(p.from, p.to);
+      const map = Store.dayMap(grid[0], grid[grid.length - 1]);
       gridHTML =
         '<div class="cal-weekdays">' +
         ['一', '二', '三', '四', '五', '六', '日'].map(function (w) { return '<span>' + w + '</span>'; }).join('') +
         '</div>' +
-        '<div class="cal-grid" id="cal-grid">' +
-        grid.map(function (date) { return calendarCell(date, { map: map, month: m, selected: selected }); }).join('') +
+        '<div class="cal-grid' + (natural ? '' : ' is-period') + '" id="cal-grid">' +
+        grid.map(function (date) {
+          return calendarCell(date, {
+            map: map,
+            month: m,
+            from: natural ? null : p.from,
+            to: natural ? null : p.to,
+            selected: selected
+          });
+        }).join('') +
         '</div>';
-      rangeText = '本月支出 <b>' + money(monthSum.expense) + '</b>';
+      rangeText = (natural ? '本月支出 ' : '本期支出 ') + '<b>' + money(Store.periodSummary(p).expense) + '</b>';
     } else {
       const days = U.weekDays(selected);
       const map = Store.dayMap(days[0], days[6]);
@@ -1549,7 +1586,7 @@
 
       '<section class="about-card">' +
       '<span class="about-logo">' + icon('leaf') + '</span>' +
-      '<p>记把好账 v1.6.18</p>' +
+      '<p>记把好账 v1.6.19</p>' +
       '<span>没有广告，没有社交，没有账号。所有数据仅保存在你的浏览器本地。</span>' +
       '<span class="storage-note">' + (Store.isStorageOK() ? icon('lock') + '本地存储正常' : icon('info') + '本地存储不可用，请勿清理浏览器数据') + '</span>' +
       (meta.lastBackupAt ? '<span class="storage-note">上次备份：' + esc(U.fullDateLabel(U.ymd(new Date(meta.lastBackupAt)))) + '</span>' : '') +
@@ -2752,13 +2789,25 @@
   function shiftCalendar(dir) {
     const view = state.cal.view;
     if (view === 'month') {
-      // 翻月时尽量保留原来的“日”，遇到 2 月等短月份自动收敛到月末
       const base = U.parseYmd(state.cal.selected || state.cal.cursor);
-      const next = U.addMonths(base, dir);
-      const day = Math.min(base.getDate(), U.daysInMonth(next.getFullYear(), next.getMonth()));
-      next.setDate(day);
-      state.cal.selected = U.ymd(next);
-      state.cal.cursor = state.cal.selected;
+      if (Store.cycleStartDay() !== 1) {
+        // 按“期”翻：保留在当前期内的相对天数，越界收敛到期末
+        const cur = Store.periodOf(U.ymd(base));
+        const offset = Math.round((U.parseYmd(U.ymd(base)) - U.parseYmd(cur.from)) / 86400000);
+        const rawM = cur.startM + dir;
+        const np = Store.periodOfMonth(cur.startY + Math.floor(rawM / 12), ((rawM % 12) + 12) % 12);
+        const span = Math.round((U.parseYmd(np.to) - U.parseYmd(np.from)) / 86400000);
+        const target = U.addDays(U.parseYmd(np.from), Math.min(offset, span));
+        state.cal.selected = U.ymd(target);
+        state.cal.cursor = state.cal.selected;
+      } else {
+        // 翻月时尽量保留原来的“日”，遇到 2 月等短月份自动收敛到月末
+        const next = U.addMonths(base, dir);
+        const day = Math.min(base.getDate(), U.daysInMonth(next.getFullYear(), next.getMonth()));
+        next.setDate(day);
+        state.cal.selected = U.ymd(next);
+        state.cal.cursor = state.cal.selected;
+      }
     } else {
       const next = U.ymd(U.addDays(U.parseYmd(state.cal.selected), dir * 7));
       state.cal.cursor = next;
